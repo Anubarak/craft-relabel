@@ -40,7 +40,6 @@ class Install extends Migration
     {
         $this->driver = Craft::$app->getConfig()->getDb()->driver;
         if ($this->createTables()) {
-            //$this->createIndexes();
             $this->addForeignKeys();
         }
 
@@ -92,30 +91,6 @@ class Install extends Migration
     /**
      * @return void
      */
-    protected function createIndexes()
-    {
-        $this->createIndex(
-            $this->db->getIndexName(
-                '{{%relabel}}',
-                'some_field',
-                true
-            ),
-            '{{%relabel}}',
-            'some_field',
-            true
-        );
-        // Additional commands depending on the db driver
-        switch ($this->driver) {
-            case DbConfig::DRIVER_MYSQL:
-                break;
-            case DbConfig::DRIVER_PGSQL:
-                break;
-        }
-    }
-
-    /**
-     * @return void
-     */
     protected function addForeignKeys()
     {
         $this->addForeignKey(
@@ -128,13 +103,6 @@ class Install extends Migration
             null
         );
         $this->addForeignKey(null, '{{%relabel}}', ['fieldLayoutId'], '{{%fieldlayouts}}', ['id'], 'CASCADE', null);
-    }
-
-    /**
-     * @return void
-     */
-    protected function insertDefaultData()
-    {
     }
 
     /**

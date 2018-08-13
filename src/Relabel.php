@@ -145,6 +145,7 @@ class Relabel extends Plugin
             return false;
         }
 
+        // inject the global to use relabel.getErrors(entry) via frontend
         if($request->getIsSiteRequest()){
             Craft::$app->getView()->getTwig()->addGlobal('relabel', new Variable());
             return false;
@@ -159,47 +160,18 @@ class Relabel extends Plugin
             __METHOD__
         );
 
+
+        /**
+         * Register field layout saves
+         */
         Event::on(
             Fields::class,
             Fields::EVENT_AFTER_SAVE_FIELD_LAYOUT,
-            function(FieldLayoutEvent $event) {
+            function(FieldLayoutEvent $event){
                 $layout = $event->layout;
                 /** @var array|null $relabel */
-                $relabel = Craft::$app->getRequest()->getParam('relabel');
-
-                if ($relabel !== null && \is_array($relabel)) {
-                    foreach ($relabel as $fieldId => $values) {
-                        $record = RelabelRecord::find()->where(
-                            [
-                                'fieldId'       => $fieldId,
-                                'fieldLayoutId' => $layout->id
-                            ]
-                        )->one();
-
-                        if ($record && !$values['name'] && !$values['instructions']) {
-                            $record->delete();
-                            continue;
-                        }
-
-                        if ($record === null) {
-                            $record = new RelabelRecord();
-                        }
-                        $record->fieldId = $fieldId;
-                        $record->name = $values['name'];
-                        $record->instructions = $values['instructions'];
-                        $record->fieldLayoutId = $layout->id;
-                        if (!$record->save()) {
-                            Craft::error('[Relabel] could not store field layout ' . Json::encode($record->getErrors()), Relabel::class);
-                        }
-                    }
-                }
-                $fieldIds = $layout->getFieldIds();
-                $unusedLabels = RelabelRecord::find()->where(['not in', 'fieldId', $fieldIds])->andWhere(
-                    ['fieldLayoutId' => $layout->id]
-                )->all();
-                foreach ($unusedLabels as $record) {
-                    $record->delete();
-                }
+                $relabel = Craft::$app->getRequest()->getBodyParam('relabel');
+                Relabel::getInstance()->getService()->saveRelabelsForLayout($layout, $relabel);
             }
         );
 
@@ -216,6 +188,8 @@ class Relabel extends Plugin
         if($this->isInstalled){
             $this->includeResources();
         }
+
+        return true;
     }
 
     /**
@@ -237,82 +211,11 @@ class Relabel extends Plugin
         }
 
         if ($request->getIsAjax()) {
-            $segments = $request->segments;
-            $actionSegment = $segments[\count($segments) - 1];
-            if ($actionSegment !== 'get-editor-html' && $actionSegment !== 'switch-entry-type') {
-                return false;
-            }
-            if ($actionSegment === 'switch-entry-type') {
-                $element = $this->_getEntryModel();
-                $layout = $element->getType()->getFieldLayout();
-            } else {
-                $attributes = $request->getBodyParam('attributes');
-                $elementId = $request->getBodyParam('elementId');
-                $elementType = $request->getBodyParam('elementType');
-                $siteId = $request->getBodyParam('siteId');
-                if ($elementId) {
-                    $element = Craft::$app->getElements()->getElementById((int)$elementId, $elementType, $siteId);
-                } else {
-                    $element = new $elementType();
-                    Craft::configure($element, $attributes);
-                }
-                $layout = $element->getFieldLayout();
-            }
-
-            if ($layout) {
-                $labelsForLayout = Relabel::$plugin->getService()->getAllLabelsForLayout($layout->id);
-
-                if ($actionSegment === 'switch-entry-type') {
-                    Craft::$app->getView()->registerJs(
-                        'Craft.Relabel.changeEntryType(' . json_encode($labelsForLayout) . ');'
-                    );
-                } else {
-                    Craft::$app->getView()->registerJs(
-                        'Craft.Relabel.initElementEditor(' . json_encode($labelsForLayout) . ');'
-                    );
-                }
-            }
+            Relabel::getService()->handleAjaxRequest();
         } else {
             $labelsForLayout = [];
-            $segments = $request->segments;
-            $layout = null;
-            if (\count($segments) >= 2) {
-                switch ($segments[0]) {
-                    case 'entries':
-                        $lastSegment = $segments[\count($segments) - 1];
-                        $id = explode('-', $lastSegment)[0];
-                        if ($id && strpos($lastSegment, '-')) {
-                            $element = Craft::$app->getElements()->getElementById($id);
-                            $layout = $element->getFieldLayout();
-                        } else {
-                            $sectionHandle = $segments[1];
-                            /** @var \craft\models\Section $section */
-                            if ($section = Craft::$app->getSections()->getSectionByHandle($sectionHandle)) {
-                                $entryTypes = $section->getEntryTypes();
-                                $layout = $entryTypes[0]->getFieldLayout();
-                            }
-                        }
+            $layout = self::$plugin->getService()->getLayoutFromRequest();
 
-                        break;
-                    case 'categories':
-                        if ($groupHandle = $segments[1]) {
-                            if ($group = Craft::$app->getCategories()->getGroupByHandle($groupHandle)) {
-                                $layout = $group->getFieldLayout();
-                            }
-                        }
-                        break;
-                    case 'globals':
-                        $handle = $segments[\count($segments) - 1];
-                        if ($globals = Craft::$app->getGlobals()->getSetByHandle($handle)) {
-                            $layout = $globals->getFieldLayout();
-                        }
-
-                        break;
-                    case 'settings':
-                        // TODO include Users and custom event for custom field layout
-                        break;
-                }
-            }
             if($layout !== null){
                 $event = new RegisterLabelEvent([
                     'fieldLayoutId' => $layout->id
@@ -350,44 +253,10 @@ class Relabel extends Plugin
     }
 
     /**
-     * @return RelabelService
+     * @return RelabelService|object
      */
     public static function getService(): RelabelService
     {
         return self::$plugin->get('relabel');
-    }
-
-    /**
-     * @return \craft\elements\Entry
-     * @throws \yii\web\BadRequestHttpException
-     * @throws \yii\web\NotFoundHttpException
-     * @throws \yii\base\InvalidConfigException
-     */
-    private function _getEntryModel(): Entry
-    {
-        // TOOD: heavy as shit... make this more change this to craft\db\Query
-        $entryId = Craft::$app->getRequest()->getBodyParam('entryId');
-        $siteId = Craft::$app->getRequest()->getBodyParam('siteId');
-
-        if ($entryId) {
-            $entry = Craft::$app->getEntries()->getEntryById($entryId, $siteId);
-
-            if (!$entry) {
-                throw new NotFoundHttpException('Entry not found');
-            }
-        } else {
-            $entry = new Entry();
-            $entry->sectionId = Craft::$app->getRequest()->getRequiredBodyParam('sectionId');
-
-            if ($siteId) {
-                $entry->siteId = $siteId;
-            }
-        }
-        $entry->typeId = Craft::$app->getRequest()->getBodyParam('typeId', $entry->typeId);
-        if (!$entry->typeId) {
-            $entry->typeId = $entry->getSection()->getEntryTypes()[0]->id;
-        }
-
-        return $entry;
     }
 }
