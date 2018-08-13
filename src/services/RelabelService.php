@@ -75,9 +75,12 @@ class RelabelService extends Component
         $request = Craft::$app->getRequest();
         $segments = $request->segments;
         $layout = null;
-        if (\count($segments) >= 2) {
+        if (\count($segments) >= 1) {
             switch ($segments[0]) {
                 case 'entries':
+                    if(\count($segments) <= 1){
+                        return null;
+                    }
                     $lastSegment = $segments[\count($segments) - 1];
                     $id = explode('-', $lastSegment)[0];
                     if ($id && strpos($lastSegment, '-')) {
@@ -95,6 +98,9 @@ class RelabelService extends Component
 
                     break;
                 case 'categories':
+                    if(\count($segments) <= 1){
+                        return null;
+                    }
                     if ($groupHandle = $segments[1]) {
                         if ($group = Craft::$app->getCategories()->getGroupByHandle($groupHandle)) {
                             $layout = $group->getFieldLayout();
@@ -102,11 +108,16 @@ class RelabelService extends Component
                     }
                     break;
                 case 'globals':
+                    if(\count($segments) <= 1){
+                        return null;
+                    }
                     $handle = $segments[\count($segments) - 1];
                     if ($globals = Craft::$app->getGlobals()->getSetByHandle($handle)) {
                         $layout = $globals->getFieldLayout();
                     }
-
+                    break;
+                case 'myaccount':
+                    $layout = Craft::$app->getFields()->getLayoutByType(User::class);
                     break;
                 case 'users':
                     $layout = Craft::$app->getFields()->getLayoutByType(User::class);
@@ -139,7 +150,7 @@ class RelabelService extends Component
             $attributes = $request->getBodyParam('attributes');
             $elementId = $request->getBodyParam('elementId');
             $elementType = $request->getBodyParam('elementType');
-            $siteId = $request->getBodyParam('siteId');
+            $siteId = (int)$request->getBodyParam('siteId');
             if ($elementId) {
                 $element = Craft::$app->getElements()->getElementById((int)$elementId, $elementType, $siteId);
             } else {
