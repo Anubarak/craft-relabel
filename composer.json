@@ -1,0 +1,35 @@
+{
+  "name": "anubarak/craft-relabel",
+  "description": "Relabel Plugin Craft",
+  "type": "craft-plugin",
+  "version": "1.1",
+  "keywords": [
+    "craft",
+    "cms",
+    "craftcms",
+    "craft-plugin",
+    "relabel"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Robin Schambach",
+      "homepage": "https://github.com/Anubarak"
+    }
+  ],
+  "require": {
+    "craftcms/cms": "^3.0.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "anubarak\\relabel\\": "src/"
+    }
+  },
+  "extra": {
+    "name": "Relabel",
+    "handle": "relabel",
+    "hasCpSettings": false,
+    "hasCpSection": false,
+    "class": "anubarak\\relabel\\Relabel"
+  }
+}
