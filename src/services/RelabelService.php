@@ -10,7 +10,9 @@
 
 namespace anubarak\relabel\services;
 
+use anubarak\relabel\events\RegisterLabelEvent;
 use anubarak\relabel\Relabel;
+use anubarak\relabel\RelabelAsset;
 use craft\base\Element;
 use craft\db\Query;
 use anubarak\relabel\records\RelabelRecord;
@@ -31,10 +33,11 @@ use yii\web\NotFoundHttpException;
  */
 class RelabelService extends Component
 {
-    // Public Methods
-    // =========================================================================
 
-
+    /**
+     * Event to register a field layout ID for custom elements
+     */
+    const EVENT_REGISTER_LABELS = 'eventRegisterLabels';
     /**
      * @return RelabelRecord[]
      */
@@ -129,10 +132,9 @@ class RelabelService extends Component
     }
 
     /**
+     * Handle a switch-entry-type or element get-editor-html event
+     *
      * @return bool
-     * @throws NotFoundHttpException
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\web\BadRequestHttpException
      */
     public function handleAjaxRequest(){
         $request = Craft::$app->getRequest();
@@ -144,8 +146,7 @@ class RelabelService extends Component
         }
 
         if ($actionSegment === 'switch-entry-type') {
-            $element = $this->_getEntryModel();
-            $layout = $element->getType()->getFieldLayout();
+            $layout = $this->getLayoutByTypeId();
         } else {
             $attributes = $request->getBodyParam('attributes');
             $elementId = $request->getBodyParam('elementId');
@@ -160,19 +161,56 @@ class RelabelService extends Component
             $layout = $element->getFieldLayout();
         }
 
-        if ($layout) {
-            $labelsForLayout = Relabel::$plugin->getService()->getAllLabelsForLayout($layout->id);
+        $event = new RegisterLabelEvent([
+            'fieldLayoutId' => $layout !== null? $layout->id : null
+        ]);
+        $this->trigger(self::EVENT_REGISTER_LABELS, $event);
+
+        if ($event->fieldLayoutId !== null) {
+            $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
 
             if ($actionSegment === 'switch-entry-type') {
                 Craft::$app->getView()->registerJs(
-                    'Craft.Relabel.changeEntryType(' . json_encode($labelsForLayout) . ');'
+                    'Craft.relabel.changeEntryType(' . json_encode($labelsForLayout) . ');'
                 );
             } else {
                 Craft::$app->getView()->registerJs(
-                    'Craft.Relabel.initElementEditor(' . json_encode($labelsForLayout) . ');'
+                    'Craft.relabel.initElementEditor(' . json_encode($labelsForLayout) . ');'
                 );
             }
         }
+
+        return true;
+    }
+
+    /**
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function handleGetRequest()
+    {
+        $labelsForLayout = [];
+        $layout = $this->getLayoutFromRequest();
+
+        $event = new RegisterLabelEvent([
+            'fieldLayoutId' => $layout !== null? $layout->id : null
+        ]);
+        $this->trigger(self::EVENT_REGISTER_LABELS, $event);
+
+        if($event->fieldLayoutId !== null){
+            $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
+        }
+
+        Craft::$app->getView()->registerAssetBundle(RelabelAsset::class);
+        $data = Json::encode(
+            [
+                'labels'          => $this->_getLabels(),
+                'labelsForLayout' => $labelsForLayout
+            ]
+        );
+
+        $view = Craft::$app->getView();
+        $view->registerTranslations('relabel', ['new label', 'new description']);
+        $view->registerJs('Craft.relabel = new Craft.Relabel(' . $data . ');');
     }
 
     /**
@@ -222,36 +260,35 @@ class RelabelService extends Component
 
 
     /**
-     * @return \craft\elements\Entry
-     * @throws \yii\web\BadRequestHttpException
-     * @throws \yii\web\NotFoundHttpException
-     * @throws \yii\base\InvalidConfigException
+     * @return FieldLayout|null
      */
-    private function _getEntryModel(): Entry
+    public function getLayoutByTypeId()
     {
-        // TOOD: heavy as shit... make this more change this to craft\db\Query
-        $entryId = Craft::$app->getRequest()->getBodyParam('entryId');
-        $siteId = Craft::$app->getRequest()->getBodyParam('siteId');
-
-        if ($entryId) {
-            $entry = Craft::$app->getEntries()->getEntryById($entryId, $siteId);
-
-            if (!$entry) {
-                throw new NotFoundHttpException('Entry not found');
-            }
-        } else {
-            $entry = new Entry();
-            $entry->sectionId = Craft::$app->getRequest()->getRequiredBodyParam('sectionId');
-
-            if ($siteId) {
-                $entry->siteId = $siteId;
-            }
-        }
-        $entry->typeId = Craft::$app->getRequest()->getBodyParam('typeId', $entry->typeId);
-        if (!$entry->typeId) {
-            $entry->typeId = $entry->getSection()->getEntryTypes()[0]->id;
+        $typeId = Craft::$app->getRequest()->getBodyParam('typeId');
+        $fieldLayoutId = (new Query())
+            ->select(['fieldLayoutId'])
+            ->from('{{%entrytypes}}')
+            ->where(['id' => $typeId])
+            ->scalar();
+        $layout = null;
+        if($fieldLayoutId !== null && $fieldLayoutId !== false){
+            $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
         }
 
-        return $entry;
+        return $layout;
+    }
+
+    /**
+     * @return array
+     */
+    private function _getLabels(): array
+    {
+        $labels = $this->getAllLabels();
+        $output = [];
+        foreach ($labels as $label) {
+            $output[] = $label->getAttributes();
+        }
+
+        return $output;
     }
 }

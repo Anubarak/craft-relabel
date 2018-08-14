@@ -4,14 +4,12 @@
  *
  * Relabel Plugin Craft
  *
- * @link      www.anubarak.de
  * @copyright Copyright (c) 2018 anubarak
  */
 
 namespace anubarak\relabel\migrations;
 
 use anubarak\relabel\Relabel;
-
 use Craft;
 use craft\config\DbConfig;
 use craft\db\Migration;

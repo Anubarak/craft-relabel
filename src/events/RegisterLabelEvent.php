@@ -1,17 +1,19 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: anuba
- * Date: 05.08.2018
- * Time: 17:22
+ * relabel plugin for Craft CMS 3.x
+ *
+ * Relabel Plugin Craft
+ *
+ * @copyright Copyright (c) 2018 anubarak
  */
-
 namespace anubarak\relabel\events;
 
-use Craft;
 use yii\base\Event;
 
 class RegisterLabelEvent extends Event{
 
+    /**
+     * @var int $fieldLayoutId
+     */
     public $fieldLayoutId;
 }

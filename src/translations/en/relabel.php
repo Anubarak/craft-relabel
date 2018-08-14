@@ -3,7 +3,6 @@
  * relabel plugin for Craft CMS 3.x
  *
  * Relabel Plugin Craft
- *
  */
 
 /**

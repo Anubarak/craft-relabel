@@ -4,15 +4,10 @@
  *
  * Relabel Plugin Craft
  *
- * @link      www.anubarak.de
  * @copyright Copyright (c) 2018 anubarak
  */
-
 namespace anubarak\relabel\records;
 
-use anubarak\relabel\Relabel;
-
-use Craft;
 use craft\db\ActiveRecord;
 
 /**
