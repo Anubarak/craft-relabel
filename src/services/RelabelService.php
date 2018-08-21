@@ -62,9 +62,9 @@ class RelabelService extends Component
                     'relabel.fieldLayoutId',
                     'fields.handle',
                 ]
-            )->from('{{%relabel}}')
+            )->from('{{%relabel}} as relabel')
             ->where(['fieldLayoutId' => $layoutId])
-            ->leftJoin('fields', 'fields.id = relabel.fieldId')
+            ->leftJoin('{{%fields}} as fields', '[[fields.id]] = [[relabel.fieldId]]')
             ->all();
     }
 
