@@ -42,6 +42,18 @@ Or in Twig
 {% set errors = relabel.getErrors(element) %}
 ```
 
-## TODO
-- allowing relabel fields in user field layout
-- create an event to register custom field layouts
+## Register Relabel for custom element types
+
+There is an event to register Relabel for a custom form, 
+
+```PHP
+use anubarak\relabel\services\RelabelService;
+
+Event::on(
+    RelabelService::class,
+    RelabelService::EVENT_REGISTER_LABELS,
+    function(RegisterLabelEvent $event){
+        $event->fieldLayoutId = $myCustomElement->fieldLayoutId;
+    }
+);
+```

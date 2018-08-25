@@ -6,6 +6,7 @@
  *
  * @copyright Copyright (c) 2018 anubarak
  */
+
 namespace anubarak\relabel;
 
 use craft\web\AssetBundle;

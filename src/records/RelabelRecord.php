@@ -20,7 +20,7 @@ use craft\db\ActiveRecord;
  * @property string                    $name             Name
  * @property string                    $instructions     Instructions
  * @property int                       $fieldId          Field
- * @property \craft\models\FieldLayout $fieldLayoutId    FieldLayout
+ * @property int                       $fieldLayoutId    FieldLayout
  */
 class RelabelRecord extends ActiveRecord
 {

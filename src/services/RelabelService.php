@@ -184,18 +184,23 @@ class RelabelService extends Component
     }
 
     /**
+     * Handle all normal HTTP GET requests
+     *
      * @throws \yii\base\InvalidConfigException
      */
     public function handleGetRequest()
     {
         $labelsForLayout = [];
+        // try to grab the current field layout from request by request params
         $layout = $this->getLayoutFromRequest();
 
+        // fire an event, so others may include custom labels
         $event = new RegisterLabelEvent([
             'fieldLayoutId' => $layout !== null? $layout->id : null
         ]);
         $this->trigger(self::EVENT_REGISTER_LABELS, $event);
 
+        // if there is a field layout, grab new labels
         if($event->fieldLayoutId !== null){
             $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
         }
@@ -249,6 +254,7 @@ class RelabelService extends Component
             }
         }
 
+        // delete old unused records
         $fieldIds = $layout->getFieldIds();
         $unusedLabels = RelabelRecord::find()->where(['not in', 'fieldId', $fieldIds])->andWhere(
             ['fieldLayoutId' => $layout->id]

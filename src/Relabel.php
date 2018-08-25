@@ -9,6 +9,7 @@
 
 namespace anubarak\relabel;
 
+use anubarak\relabel\events\RegisterLabelEvent;
 use craft\base\Element;
 use craft\base\ElementInterface;
 use craft\base\Field;
@@ -55,18 +56,20 @@ class Relabel extends Plugin
         $errors = $element->getErrors();
         if(!empty($errors)){
             $layout = $element->getFieldLayout();
-            $labelsForLayout = Relabel::getService()->getAllLabelsForLayout($layout->id);
-            foreach ($labelsForLayout as $relabel){
-                /** @var Field $originalField */
-                $originalField = Relabel::getFieldById($relabel['fieldId']);
-                if(isset($errors[$relabel['handle']])){
-                    /** @var array $messages */
-                    $messages = $errors[$relabel['handle']];
-                    foreach ($messages as $key => $message){
+            if($layout !== null){
+                $labelsForLayout = Relabel::getService()->getAllLabelsForLayout($layout->id);
+                foreach ($labelsForLayout as $relabel){
+                    /** @var Field $originalField */
+                    $originalField = Relabel::getFieldById($relabel['fieldId']);
+                    if(isset($errors[$relabel['handle']])){
+                        /** @var array $messages */
+                        $messages = $errors[$relabel['handle']];
+                        foreach ($messages as $key => $message){
 
-                        $str = preg_replace('/^'.$originalField->name.'/',$relabel['name'],$message);
-                        if($str){
-                            $errors[$relabel['handle']][$key] = $str;
+                            $str = preg_replace('/^'.$originalField->name.'/',$relabel['name'],$message);
+                            if($str){
+                                $errors[$relabel['handle']][$key] = $str;
+                            }
                         }
                     }
                 }
@@ -164,10 +167,8 @@ class Relabel extends Plugin
     }
 
     /**
-     * @throws \yii\web\NotFoundHttpException
-     * @throws \yii\web\BadRequestHttpException
+     * @return bool
      * @throws \yii\base\InvalidConfigException
-     * @throws \yii\web\NotFoundHttpException
      */
     protected function includeResources()
     {
