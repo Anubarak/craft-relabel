@@ -15,10 +15,14 @@ use craft\base\ElementInterface;
 use craft\base\Field;
 use craft\base\FieldInterface;
 use craft\events\FieldLayoutEvent;
+use craft\events\TemplateEvent;
 use craft\services\Fields;
 use anubarak\relabel\services\RelabelService;
 use Craft;
 use craft\base\Plugin;
+use craft\web\Controller;
+use craft\web\View;
+use yii\base\ActionEvent;
 use yii\base\Event;
 
 /**
@@ -134,7 +138,6 @@ class Relabel extends Plugin
             __METHOD__
         );
 
-
         /**
          * Register field layout saves
          */
@@ -159,8 +162,15 @@ class Relabel extends Plugin
             ]
         );
 
+
         if($this->isInstalled){
-            $this->includeResources();
+            Event::on(
+                View::class,
+                View::EVENT_BEFORE_RENDER_PAGE_TEMPLATE,
+                function(TemplateEvent $event){
+                    $this->includeResources();
+                }
+            );
         }
 
         return true;
@@ -170,7 +180,7 @@ class Relabel extends Plugin
      * @return bool
      * @throws \yii\base\InvalidConfigException
      */
-    protected function includeResources()
+    protected function includeResources(): bool
     {
         $request = Craft::$app->getRequest();
 
@@ -181,9 +191,9 @@ class Relabel extends Plugin
         // check for an ajax request to switch entry types or to create a new
         // element index editor
         if ($request->getIsAjax()) {
-            Relabel::getService()->handleAjaxRequest();
+            self::getService()->handleAjaxRequest();
         } else {
-            Relabel::getService()->handleGetRequest();
+            self::getService()->handleGetRequest();
         }
 
         return true;
@@ -191,6 +201,7 @@ class Relabel extends Plugin
 
     /**
      * @return RelabelService|object
+     * @throws \yii\base\InvalidConfigException
      */
     public static function getService(): RelabelService
     {

@@ -2,7 +2,7 @@
 
 Relabel Plugin Craft
 
-![Screenshot](resources/img/plugin-logo.png)
+![Screenshot](resources/img/icon.svg)
 
 ## Requirements
 
@@ -18,7 +18,7 @@ To install the plugin, follow these instructions.
 
 2. Then tell Composer to load the plugin:
 
-        composer require anubarak/craft-relabel:dev-master
+        composer require anubarak/craft-relabel
 
 3. In the Control Panel, go to Settings → Plugins and click the “Install” button for Relabel .
 
@@ -52,7 +52,7 @@ use anubarak\relabel\services\RelabelService;
 Event::on(
     RelabelService::class,
     RelabelService::EVENT_REGISTER_LABELS,
-    function(RegisterLabelEvent $event){
+    function(RegisterLabelEvent $event) use($myCustomElement){
         $event->fieldLayoutId = $myCustomElement->fieldLayoutId;
     }
 );
