@@ -1,8 +1,7 @@
 # relabel plugin for Craft CMS 3.x
 
-Relabel Plugin Craft
 
-![Screenshot](resources/img/icon.svg)
+<img src="resources/img/icon.svg" alt="drawing" width="200"/>
 
 ## Requirements
 
