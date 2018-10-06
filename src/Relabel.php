@@ -164,36 +164,17 @@ class Relabel extends Plugin
 
 
         if($this->isInstalled){
-            Event::on(
-                View::class,
-                View::EVENT_BEFORE_RENDER_PAGE_TEMPLATE,
-                function(TemplateEvent $event){
-                    $this->includeResources();
-                }
-            );
-        }
-
-        return true;
-    }
-
-    /**
-     * @return bool
-     * @throws \yii\base\InvalidConfigException
-     */
-    protected function includeResources(): bool
-    {
-        $request = Craft::$app->getRequest();
-
-        if(strpos($request->getFullPath(), 'admin/actions/debug/default') !== false){
-            return false;
-        }
-
-        // check for an ajax request to switch entry types or to create a new
-        // element index editor
-        if ($request->getIsAjax()) {
-            self::getService()->handleAjaxRequest();
-        } else {
-            self::getService()->handleGetRequest();
+            if ($request->getIsAjax()) {
+                self::getService()->handleAjaxRequest();
+            } else {
+                Event::on(
+                    View::class,
+                    View::EVENT_BEFORE_RENDER_PAGE_TEMPLATE,
+                    function(TemplateEvent $event){
+                        self::getService()->handleGetRequest();
+                    }
+                );
+            }
         }
 
         return true;
@@ -201,7 +182,6 @@ class Relabel extends Plugin
 
     /**
      * @return RelabelService|object
-     * @throws \yii\base\InvalidConfigException
      */
     public static function getService(): RelabelService
     {
