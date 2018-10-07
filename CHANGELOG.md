@@ -4,11 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 1.1.1 - 2018-10-6
-### Bugfix
+
+## 1.1.2 - 2018-10-07
+### Fixed
+- Fixed a wrong translation
+
+### Changed
+- Autofocus new popup window when relabeling a field
+- Changed way to receive errors from elements in Twig please use `craft.relabel.gerErrors(element)` now
+
+### Deprecated  
+- included the `secondred\relabel\Variable.php` as behavior to `CraftVariable` rather than a global to Twig
+
+## 1.1.1 - 2018-10-06
+### Fixed
 - Fixed a bug that prevents field layouts by rendered via ajax request to render properly
 
-## 1.1.0 - 2018-10-6
+## 1.1.0 - 2018-10-06
 ### Added
 - Displaying Relabels for error messages
 - Release in plugin store
