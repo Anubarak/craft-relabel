@@ -11,10 +11,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Changed
 - Autofocus new popup window when relabeling a field
-- Changed way to receive errors from elements in Twig please use `craft.relabel.gerErrors(element)` now
+- Changed way to receive errors from elements in Twig please use `craft.relabel.getErrors(element)` now
 
 ### Deprecated  
-- included the `secondred\relabel\Variable.php` as behavior to `CraftVariable` rather than a global to Twig
+- included the `anubarak\relabel\Variable.php` as behavior to `CraftVariable` rather than a global to Twig
 
 ## 1.1.1 - 2018-10-06
 ### Fixed
