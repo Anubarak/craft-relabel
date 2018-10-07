@@ -21,6 +21,7 @@ use anubarak\relabel\services\RelabelService;
 use Craft;
 use craft\base\Plugin;
 use craft\web\Controller;
+use craft\web\twig\variables\CraftVariable;
 use craft\web\View;
 use yii\base\ActionEvent;
 use yii\base\Event;
@@ -83,7 +84,6 @@ class Relabel extends Plugin
         return $errors;
     }
 
-
     /**
      * @param $id
      *
@@ -125,6 +125,15 @@ class Relabel extends Plugin
 
         // inject the global to use relabel.getErrors(entry) via frontend
         if($request->getIsSiteRequest()){
+            Event::on(
+                CraftVariable::class,
+                CraftVariable::EVENT_INIT,
+                function(Event $event) {
+                    /** @var CraftVariable $variable */
+                    $variable = $event->sender;
+                    $variable->set('relabel', Variable::class);
+                }
+            );
             Craft::$app->getView()->getTwig()->addGlobal('relabel', new Variable());
             return false;
         }

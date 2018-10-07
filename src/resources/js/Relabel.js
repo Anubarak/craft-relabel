@@ -260,13 +260,20 @@
             var $footer = $('<div class="hud-footer"/>').appendTo($hudBody),
                 $buttonsContainer = $('<div class="buttons right"/>').appendTo($footer);
             this.$saveBtn = $('<input type="submit" class="btn submit" value="' + Craft.t('app', 'Save') + '"/>').appendTo($buttonsContainer);
-            this.$closeBtn = $('<button type="button" class="btn" >' + Craft.t('app', 'Abbrechen') + '</button>').appendTo($buttonsContainer);
+            this.$closeBtn = $('<button type="button" class="btn" >' + Craft.t('app', 'Cancel') + '</button>').appendTo($buttonsContainer);
             this.$spinner = $('<div class="spinner hidden"/>').appendTo($buttonsContainer);
             this.$closeBtn.on('click', function () {
                 e.closeHud();
             });
             this.hud = new Garnish.HUD(btn, $hudBody, {
-                onSubmit: $.proxy(this, 'saveRelabel')
+                onSubmit: $.proxy(this, 'saveRelabel'),
+                // auto focus the input
+                onShow: function(e){
+                    var hud = e.target;
+                    if(typeof hud !== 'undefined'){
+                        hud.$main.find('#relabel-name').focus();
+                    }
+                }
             });
         },
         saveRelabel: function () {

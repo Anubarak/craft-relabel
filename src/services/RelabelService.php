@@ -47,11 +47,11 @@ class RelabelService extends Component
     }
 
     /**
-     * @param $layoutId
+     * @param int $layoutId
      *
      * @return array
      */
-    public function getAllLabelsForLayout($layoutId): array
+    public function getAllLabelsForLayout(int $layoutId): array
     {
         return (new Query())->select(
                 [
@@ -145,7 +145,7 @@ class RelabelService extends Component
         if ($actionSegment !== 'get-editor-html' && $actionSegment !== 'switch-entry-type') {
             return false;
         }
-
+        $layout = null;
         if ($actionSegment === 'switch-entry-type') {
             $layout = $this->getLayoutByTypeId();
         } else {
@@ -159,7 +159,10 @@ class RelabelService extends Component
                 $element = new $elementType();
                 Craft::configure($element, $attributes);
             }
-            $layout = $element->getFieldLayout();
+
+            if($element !== null && $element::hasContent()){
+                $layout = $element->getFieldLayout();
+            }
         }
 
         $event = new RegisterLabelEvent([

@@ -12,6 +12,6 @@
  */
 return [
     'relabel plugin loaded' => 'relabel plugin loaded',
-    'new label'             => 'New label',
-    'new description'       => 'New description'
+    'new label'             => 'Neues Label',
+    'new description'       => 'Neue Beschreibung'
 ];
