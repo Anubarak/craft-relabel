@@ -22,13 +22,14 @@ use craft\elements\Entry;
 use craft\elements\User;
 use craft\helpers\Json;
 use craft\models\FieldLayout;
-use yii\web\NotFoundHttpException;
 
 /**
  * @author    anubarak
  * @package   Relabel
  * @since     1
  *
+ * @property null|\craft\models\FieldLayout                                      $layoutFromRequest
+ * @property null|\craft\models\FieldLayout                                      $layoutByTypeId
  * @property \yii\db\ActiveQuery|\anubarak\relabel\records\RelabelRecord[]|array $allLabels
  */
 class RelabelService extends Component
@@ -89,7 +90,7 @@ class RelabelService extends Component
                     $id = explode('-', $lastSegment)[0];
                     if ($id && strpos($lastSegment, '-')) {
                         /** @var Element $element */
-                        $element = Craft::$app->getElements()->getElementById($id);
+                        $element = Craft::$app->getElements()->getElementById($id, Entry::class);
                         $layout = $element->getFieldLayout();
                     } else {
                         $sectionHandle = $segments[1];
@@ -126,6 +127,33 @@ class RelabelService extends Component
                 case 'users':
                     $layout = Craft::$app->getFields()->getLayoutByType(User::class);
                     break;
+                case 'commerce':
+                    if(\count($segments) <= 2){
+                        return null;
+                    }
+                    // unfortunately we can't just use Commerce classes since we can't make
+                    // sure they exists and the plugin should run even without it :(
+                    $lastSegment = $segments[\count($segments) - 1];
+                    $id = explode('-', $lastSegment)[0];
+                    if ($id && strpos($lastSegment, '-')) {
+                        /** @var Element $element */
+                        $element = Craft::$app->getElements()->getElementById($id, 'craft\\commerce\\elements\\Product');
+                        $layout = $element->getFieldLayout();
+                    } else {
+                        $productGroup =  $segments[2];
+                        // query for it
+                        $fieldLayoutId = (new Query())
+                            ->select(['fieldLayoutId'])
+                            ->from('{{%commerce_producttypes}}')
+                            ->where(['handle' => $productGroup])
+                            ->scalar();
+
+                        /** @var \craft\models\Section $section */
+                        if ($fieldLayoutId !== false){
+                            $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                        }
+                    }
+                    break;
             }
         }
 
@@ -137,7 +165,8 @@ class RelabelService extends Component
      *
      * @return bool
      */
-    public function handleAjaxRequest(){
+    public function handleAjaxRequest(): bool
+    {
         $request = Craft::$app->getRequest();
 
         $segments = $request->segments;
@@ -175,11 +204,11 @@ class RelabelService extends Component
 
             if ($actionSegment === 'switch-entry-type') {
                 Craft::$app->getView()->registerJs(
-                    'Craft.relabel.changeEntryType(' . json_encode($labelsForLayout) . ');'
+                    'Craft.relabel.changeEntryType(' . Json::encode($labelsForLayout) . ');'
                 );
             } else {
                 Craft::$app->getView()->registerJs(
-                    'Craft.relabel.initElementEditor(' . json_encode($labelsForLayout) . ');'
+                    'Craft.relabel.initElementEditor(' . Json::encode($labelsForLayout) . ');'
                 );
             }
         }
