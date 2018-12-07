@@ -191,6 +191,7 @@ class Relabel extends Plugin
 
     /**
      * @return RelabelService|object
+     * @throws \yii\base\InvalidConfigException
      */
     public static function getService(): RelabelService
     {

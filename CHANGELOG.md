@@ -1,5 +1,10 @@
 # Relabel Changelog
 
+## 1.1.4 - 2018-12-07
+
+### Added 
+- Verbb Gift Voucher support https://github.com/verbb/gift-voucher
+
 ## 1.1.3 - 2018-10-28
 
 ### Added 

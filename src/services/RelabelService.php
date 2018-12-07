@@ -127,6 +127,34 @@ class RelabelService extends Component
                 case 'users':
                     $layout = Craft::$app->getFields()->getLayoutByType(User::class);
                     break;
+                case 'gift-voucher':
+                    if(\count($segments) <= 2){
+                        return null;
+                    }
+
+                    // check for an id
+                if(\count($segments) === 4){
+                    if(\is_numeric($segments[3])){
+                        $element = Craft::$app->getElements()->getElementById((int)$segments[3], 'verbb\\giftvoucher\\elements\\Voucher');
+                        $layout = $element->getFieldLayout();
+
+                    }else{
+                        // unfortunately we can't just use Commerce classes since we can't make
+                        // sure they exists and the plugin should run even without it :(
+                        $type = $segments[2];
+                        $fieldLayoutId = (new Query())
+                            ->select(['fieldLayoutId'])
+                            ->from('{{%giftvoucher_vouchertypes}}')
+                            ->where(['handle' => $type])
+                            ->scalar();
+                        /** @var \craft\models\Section $section */
+                        if ($fieldLayoutId !== false){
+                            $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                        }
+                    }
+                }
+
+                    break;
                 case 'commerce':
                     if(\count($segments) <= 2){
                         return null;
