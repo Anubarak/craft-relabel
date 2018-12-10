@@ -145,7 +145,7 @@ class Relabel extends Plugin
                 ['name' => $this->name]
             ),
             __METHOD__
-        ); 
+        );
 
         /**
          * Register field layout saves

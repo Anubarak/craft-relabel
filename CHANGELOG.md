@@ -1,5 +1,10 @@
 # Relabel Changelog
 
+## 1.1.5 - 2018-12-10
+### Fixed
+- Fix in last commit
+
+
 ## 1.1.4 - 2018-12-07
 
 ### Added 
