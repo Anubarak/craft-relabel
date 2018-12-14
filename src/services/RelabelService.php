@@ -55,16 +55,16 @@ class RelabelService extends Component
     public function getAllLabelsForLayout(int $layoutId): array
     {
         return (new Query())->select(
-                [
-                    'relabel.id',
-                    'relabel.name',
-                    'relabel.instructions',
-                    'relabel.fieldId',
-                    'relabel.fieldLayoutId',
-                    'fields.handle',
-                    'fields.name as oldName'
-                ]
-            )->from('{{%relabel}} as relabel')
+            [
+                'relabel.id',
+                'relabel.name',
+                'relabel.instructions',
+                'relabel.fieldId',
+                'relabel.fieldLayoutId',
+                'fields.handle',
+                'fields.name as oldName'
+            ]
+        )->from('{{%relabel}} as relabel')
             ->where(['fieldLayoutId' => $layoutId])
             ->leftJoin('{{%fields}} as fields', '[[fields.id]] = [[relabel.fieldId]]')
             ->all();
@@ -133,52 +133,63 @@ class RelabelService extends Component
                     }
 
                     // check for an id
-                if(\count($segments) === 4){
-                    if(\is_numeric($segments[3])){
-                        $element = Craft::$app->getElements()->getElementById((int)$segments[3], 'verbb\\giftvoucher\\elements\\Voucher');
-                        $layout = $element->getFieldLayout();
+                    if(\count($segments) === 4){
+                        if(\is_numeric($segments[3])){
+                            $element = Craft::$app->getElements()->getElementById((int)$segments[3], 'verbb\\giftvoucher\\elements\\Voucher');
+                            $layout = $element->getFieldLayout();
 
-                    }else{
-                        // unfortunately we can't just use Commerce classes since we can't make
-                        // sure they exists and the plugin should run even without it :(
-                        $type = $segments[2];
-                        $fieldLayoutId = (new Query())
-                            ->select(['fieldLayoutId'])
-                            ->from('{{%giftvoucher_vouchertypes}}')
-                            ->where(['handle' => $type])
-                            ->scalar();
-                        /** @var \craft\models\Section $section */
-                        if ($fieldLayoutId !== false){
-                            $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                        }else{
+                            // unfortunately we can't just use Commerce classes since we can't make
+                            // sure they exists and the plugin should run even without it :(
+                            $type = $segments[2];
+                            $fieldLayoutId = (new Query())
+                                ->select(['fieldLayoutId'])
+                                ->from('{{%giftvoucher_vouchertypes}}')
+                                ->where(['handle' => $type])
+                                ->scalar();
+                            /** @var \craft\models\Section $section */
+                            if ($fieldLayoutId !== false){
+                                $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                            }
                         }
                     }
-                }
 
                     break;
                 case 'commerce':
                     if(\count($segments) <= 2){
                         return null;
                     }
-                    // unfortunately we can't just use Commerce classes since we can't make
-                    // sure they exists and the plugin should run even without it :(
-                    $lastSegment = $segments[\count($segments) - 1];
-                    $id = explode('-', $lastSegment)[0];
-                    if ($id && strpos($lastSegment, '-')) {
-                        /** @var Element $element */
-                        $element = Craft::$app->getElements()->getElementById($id, 'craft\\commerce\\elements\\Product');
-                        $layout = $element->getFieldLayout();
-                    } else {
-                        $productGroup =  $segments[2];
-                        // query for it
-                        $fieldLayoutId = (new Query())
-                            ->select(['fieldLayoutId'])
-                            ->from('{{%commerce_producttypes}}')
-                            ->where(['handle' => $productGroup])
-                            ->scalar();
 
-                        /** @var \craft\models\Section $section */
-                        if ($fieldLayoutId !== false){
-                            $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                    if($segments[1] === 'orders'){
+                        $lastSegment = $segments[\count($segments) - 1];
+                        if(\is_numeric($lastSegment)){
+                            $element = Craft::$app->getElements()->getElementById($lastSegment, 'craft\\commerce\\elements\\Order');
+                            $layout = $element->getFieldLayout();
+                        }
+                    }
+
+                    if($segments[1] === 'products'){
+                        // unfortunately we can't just use Commerce classes since we can't make
+                        // sure they exists and the plugin should run even without it :(
+                        $lastSegment = $segments[\count($segments) - 1];
+                        $id = explode('-', $lastSegment)[0];
+                        if ($id && strpos($lastSegment, '-')) {
+                            /** @var Element $element */
+                            $element = Craft::$app->getElements()->getElementById($id, 'craft\\commerce\\elements\\Product');
+                            $layout = $element->getFieldLayout();
+                        } else {
+                            $productGroup =  $segments[2];
+                            // query for it
+                            $fieldLayoutId = (new Query())
+                                ->select(['fieldLayoutId'])
+                                ->from('{{%commerce_producttypes}}')
+                                ->where(['handle' => $productGroup])
+                                ->scalar();
+
+                            /** @var \craft\models\Section $section */
+                            if ($fieldLayoutId !== false){
+                                $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                            }
                         }
                     }
                     break;
@@ -223,8 +234,8 @@ class RelabelService extends Component
         }
 
         $event = new RegisterLabelEvent([
-            'fieldLayoutId' => $layout !== null? $layout->id : null
-        ]);
+                                            'fieldLayoutId' => $layout !== null? $layout->id : null
+                                        ]);
         $this->trigger(self::EVENT_REGISTER_LABELS, $event);
 
         if ($event->fieldLayoutId !== null) {
@@ -257,8 +268,8 @@ class RelabelService extends Component
 
         // fire an event, so others may include custom labels
         $event = new RegisterLabelEvent([
-            'fieldLayoutId' => $layout !== null? $layout->id : null
-        ]);
+                                            'fieldLayoutId' => $layout !== null? $layout->id : null
+                                        ]);
         $this->trigger(self::EVENT_REGISTER_LABELS, $event);
 
         // if there is a field layout, grab new labels

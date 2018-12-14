@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.1.6 - 2018-12-14
+### Added
+- Craft Commerce, include relabel for Orders, not just Products
+
 ## 1.1.5 - 2018-12-10
 ### Fixed
 - Fix in last commit
