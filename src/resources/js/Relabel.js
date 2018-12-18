@@ -100,7 +100,10 @@
                     var newLabel = self.getLabelForField(fieldHandle, labels);
                     var data = this.getDataForField(fieldHandle, labels);
                     if (newLabel !== false) {
-                        span.contents()[0].data = newLabel + ' ';
+                        var spanContainer = span.contents();
+                        if(spanContainer.length){
+                            spanContainer[0].data = newLabel + ' ';
+                        }
                     }
                     var newInstruction = self.getInstructionForField(fieldHandle, labels);
                     if (newInstruction !== false && includeDescription) {

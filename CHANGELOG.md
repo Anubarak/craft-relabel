@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.1.7 - 2018-12-18
+### Fixed
+- Included additional JavaScript checks to solve an undefined issue https://github.com/Anubarak/craft-relabel/issues/3
+
 ## 1.1.6 - 2018-12-14
 ### Added
 - Craft Commerce, include relabel for Orders, not just Products
