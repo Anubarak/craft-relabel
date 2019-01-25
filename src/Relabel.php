@@ -172,7 +172,7 @@ class Relabel extends Plugin
         );
 
 
-        if($this->isInstalled){
+        if($this->isInstalled && Craft::$app->getUser()->getIdentity() !== null){
             if ($request->getIsAjax()) {
                 self::getService()->handleAjaxRequest();
             } else {

@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.1.8 - 2019-01-25
+### Changed
+- Only showing field labels when there is a user logged in and not during loading screen
+
 ## 1.1.7 - 2018-12-18
 ### Fixed
 - Included additional JavaScript checks to solve an undefined issue https://github.com/Anubarak/craft-relabel/issues/3
