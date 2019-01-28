@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.2.0 - 2019-01-28
+### Added
+- Include support for project config
+
 ## 1.1.8 - 2019-01-25
 ### Changed
 - Only showing field labels when there is a user logged in and not during loading screen

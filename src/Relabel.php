@@ -9,7 +9,6 @@
 
 namespace anubarak\relabel;
 
-use anubarak\relabel\events\RegisterLabelEvent;
 use craft\base\Element;
 use craft\base\ElementInterface;
 use craft\base\Field;
@@ -20,10 +19,8 @@ use craft\services\Fields;
 use anubarak\relabel\services\RelabelService;
 use Craft;
 use craft\base\Plugin;
-use craft\web\Controller;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\View;
-use yii\base\ActionEvent;
 use yii\base\Event;
 
 /**
@@ -37,6 +34,11 @@ use yii\base\Event;
  */
 class Relabel extends Plugin
 {
+    /**
+     * @var string
+     */
+    public $schemaVersion = '1.1.0';
+
     // Static Properties
     // =========================================================================
 
@@ -63,10 +65,10 @@ class Relabel extends Plugin
         if(!empty($errors)){
             $layout = $element->getFieldLayout();
             if($layout !== null){
-                $labelsForLayout = Relabel::getService()->getAllLabelsForLayout($layout->id);
+                $labelsForLayout = self::getService()->getAllLabelsForLayout($layout->id);
                 foreach ($labelsForLayout as $relabel){
                     /** @var Field $originalField */
-                    $originalField = Relabel::getFieldById($relabel['fieldId']);
+                    $originalField = self::getFieldById($relabel['fieldId']);
                     if(isset($errors[$relabel['handle']])){
                         /** @var array $messages */
                         $messages = $errors[$relabel['handle']];
@@ -99,15 +101,8 @@ class Relabel extends Plugin
         return self::$fieldById[$id];
     }
 
-
-    /**
-     * @var string
-     */
-    public $schemaVersion = '1.0.0';
-
     /**
      * @inheritdoc
-     * @return bool
      * @throws \yii\base\InvalidConfigException
      */
     public function init()
@@ -167,6 +162,7 @@ class Relabel extends Plugin
             ]
         );
 
+        // include project settings events
         Craft::$app->getProjectConfig()
             ->onAdd(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleChangedRelabel'])
             ->onUpdate(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleChangedRelabel'])
