@@ -33,7 +33,7 @@ use yii\base\Event;
  * @package   Relabel
  * @since     1
  *
- * @property  relabel $relabelService
+ * @property  relabel $relabel
  */
 class Relabel extends Plugin
 {
@@ -54,6 +54,7 @@ class Relabel extends Plugin
      * @param ElementInterface $element
      *
      * @return array
+     * @throws \yii\base\InvalidConfigException
      */
     public static function getErrors(ElementInterface $element): array
     {
@@ -104,14 +105,9 @@ class Relabel extends Plugin
      */
     public $schemaVersion = '1.0.0';
 
-
     /**
      * @inheritdoc
-     * @throws \yii\web\NotFoundHttpException
-     * @throws \yii\web\BadRequestHttpException
-     * @throws \yii\db\StaleObjectException
-     * @throws \Throwable
-     * @throws \Exception
+     * @return bool
      * @throws \yii\base\InvalidConfigException
      */
     public function init()
@@ -171,6 +167,10 @@ class Relabel extends Plugin
             ]
         );
 
+        Craft::$app->getProjectConfig()
+            ->onAdd(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleChangedRelabel'])
+            ->onUpdate(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleChangedRelabel'])
+            ->onRemove(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleDeletedRelabel']);
 
         if($this->isInstalled && Craft::$app->getUser()->getIdentity() !== null){
             if ($request->getIsAjax()) {
