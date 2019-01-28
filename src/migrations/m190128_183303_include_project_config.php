@@ -28,7 +28,7 @@ class m190128_183303_include_project_config extends Migration
                 $path,
                 [
                     'field'        => Db::uidById('{{%fields}}', (int) $record->fieldId),
-                    'fieldLayout'  => Db::uidById('{{%fieldlayouts}}', (int) $record->fieldId),
+                    'fieldLayout'  => Db::uidById('{{%fieldlayouts}}', (int) $record->fieldLayoutId),
                     'instructions' => $record->instructions,
                     'name'         => $record->name
                 ]
