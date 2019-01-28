@@ -406,8 +406,6 @@ class RelabelService extends Component
     {
         // Get the UID that was matched in the config path
         $uid = $event->tokenMatches[0];
-
-
         $record = RelabelRecord::findOne(['uid' => $uid]);
 
         if ($record === null) {
@@ -423,6 +421,10 @@ class RelabelService extends Component
         $record->save();
     }
 
+    /**
+     * @param $relabel
+     * since 28.01.2019
+     */
     public function deleteRelabel($relabel)
     {
         // Remove it from the project config
