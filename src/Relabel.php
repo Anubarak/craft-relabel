@@ -109,6 +109,23 @@ class Relabel extends Plugin
     {
         parent::init();
         self::$plugin = $this;
+
+        /**
+         * Register Components
+         */
+        $this->setComponents(
+            [
+                'relabel' => RelabelService::class
+            ]
+        );
+
+        // include project settings events
+        Craft::$app->getProjectConfig()
+            ->onAdd(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleChangedRelabel'])
+            ->onUpdate(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleChangedRelabel'])
+            ->onRemove(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleDeletedRelabel']);
+
+
         $request = Craft::$app->getRequest();
         if( $request->getIsConsoleRequest() || strpos($request->getFullPath(), 'admin/actions/debug/default') !== false){
             return false;
@@ -151,22 +168,6 @@ class Relabel extends Plugin
                 Relabel::getInstance()->getService()->saveRelabelsForLayout($layout, $relabel);
             }
         );
-
-
-        /**
-         * Register Components
-         */
-        $this->setComponents(
-            [
-                'relabel' => RelabelService::class
-            ]
-        );
-
-        // include project settings events
-        Craft::$app->getProjectConfig()
-            ->onAdd(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleChangedRelabel'])
-            ->onUpdate(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleChangedRelabel'])
-            ->onRemove(RelabelService::CONFIG_RELABEL_KEY . '.{uid}', [$this->relabel, 'handleDeletedRelabel']);
 
         if($this->isInstalled && Craft::$app->getUser()->getIdentity() !== null){
             if ($request->getIsAjax()) {
