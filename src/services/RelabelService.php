@@ -237,8 +237,10 @@ class RelabelService extends Component
                 Craft::configure($element, $attributes);
             }
 
-            if ($element !== null && $element::hasContent()) {
-                $layout = $element->getFieldLayout();
+            /** @var Element $element */
+            if ($element !== null && property_exists($element, 'fieldLayoutId') && $element::hasContent()) {
+                $fieldLayoutId = (int)$element->fieldLayoutId;
+                $layout = Craft::$app->getFields()->getLayoutById($fieldLayoutId);
             }
         }
 

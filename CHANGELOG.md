@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.2.1 - 2019-01-31
+### Fixed
+- Fixed a bug that required 3rd party plugins to use their components without being initialized
+
 ## 1.2.1 - 2019-01-28
 ### Fixed
 - Fixed a bug that prevented to fetch the relabels on update
