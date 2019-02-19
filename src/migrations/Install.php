@@ -9,9 +9,6 @@
 
 namespace anubarak\relabel\migrations;
 
-use anubarak\relabel\Relabel;
-use Craft;
-use craft\config\DbConfig;
 use craft\db\Migration;
 
 /**
@@ -21,25 +18,16 @@ use craft\db\Migration;
  */
 class Install extends Migration
 {
-    // Public Properties
-    // =========================================================================
-
-    /**
-     * @var string The database driver to use
-     */
-    public $driver;
     // Public Methods
     // =========================================================================
 
     /**
      * @inheritdoc
      */
-    public function safeUp()
+    public function safeUp(): bool
     {
-        $this->driver = Craft::$app->getConfig()->getDb()->driver;
-        if ($this->createTables()) {
-            $this->addForeignKeys();
-        }
+        $this->createTables();
+        $this->addForeignKeys();
 
         return true;
     }
@@ -47,9 +35,8 @@ class Install extends Migration
     /**
      * @inheritdoc
      */
-    public function safeDown()
+    public function safeDown(): bool
     {
-        $this->driver = Craft::$app->getConfig()->getDb()->driver;
         $this->removeTables();
 
         return true;
@@ -58,32 +45,24 @@ class Install extends Migration
     // Protected Methods
     // =========================================================================
 
-    /**
-     * @return bool
-     */
+
     protected function createTables()
     {
-        $tablesCreated = false;
-
-        //$tableSchema = Craft::$app->db->schema->getTableSchema('{{%relabel}}');
-        if (true) {
-            $tablesCreated = true;
-            $this->createTable(
-                '{{%relabel}}',
-                [
-                    'id'            => $this->primaryKey(),
-                    'name'          => $this->string()->notNull(),
-                    'instructions'  => $this->string()->notNull(),
-                    'fieldId'       => $this->integer()->notNull(),
-                    'fieldLayoutId' => $this->integer()->notNull(),
-                    'dateCreated'   => $this->dateTime()->notNull(),
-                    'dateUpdated'   => $this->dateTime()->notNull(),
-                    'uid'           => $this->uid(),
-                ]
-            );
-        }
-
-        return $tablesCreated;
+        // no migration yet... maybe if there is a feature request...
+        $this->dropTableIfExists('{{%relabel}}');
+        $this->createTable(
+            '{{%relabel}}',
+            [
+                'id'            => $this->primaryKey(),
+                'name'          => $this->string()->notNull(),
+                'instructions'  => $this->string()->notNull(),
+                'fieldId'       => $this->integer()->notNull(),
+                'fieldLayoutId' => $this->integer()->notNull(),
+                'dateCreated'   => $this->dateTime()->notNull(),
+                'dateUpdated'   => $this->dateTime()->notNull(),
+                'uid'           => $this->uid(),
+            ]
+        );
     }
 
     /**
@@ -100,7 +79,15 @@ class Install extends Migration
             'CASCADE',
             null
         );
-        $this->addForeignKey(null, '{{%relabel}}', ['fieldLayoutId'], '{{%fieldlayouts}}', ['id'], 'CASCADE', null);
+
+        $this->addForeignKey(
+            null,
+            '{{%relabel}}',
+            ['fieldLayoutId'],
+            '{{%fieldlayouts}}',
+            ['id'],
+            'CASCADE'
+        );
     }
 
     /**
