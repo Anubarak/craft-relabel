@@ -62,12 +62,52 @@ Event::on(
 );
 ```
 
-Currently supported Element Types are
+## Register additional Relabels
+
+You can as well register additional Labels for every field layout within your Plugins `init` function as well. Important: you need
+to have the event there and not in certain Controllers because I need to pass those variables before the Controller action begins otherwise I'm not able to inject 
+the required JavaScript to the request. This is an example how you could register custom nested field layouts
+
+```php
+Event::on(
+    RelabelService::class,
+    RelabelService::EVENT_REGISTER_ADDITIONAL_LABELS,
+    function(Event $event) {
+        $layoutId = $event->fieldLayoutId;
+        $fields = Craft::$app->getFields()->getFieldsByLayoutId($layoutId);
+        $plugin = Craft::$app->getPlugins()->getPlugin('relabel');
+        /** @var RelabelService $service */
+        $service = $plugin->get('relabel');
+
+        foreach ($fields as $field){
+            if($field instanceof Field){
+                $blocks = $field->getBlockTypes();
+                foreach ($blocks as $block){
+                    $layoutForBlock = (int)$block->fieldLayoutId;
+                    $index = $field->handle . '.' . $block->handle;
+                    $relabels = $service->getAllLabelsForLayout($layoutForBlock, $index);
+                    foreach ($relabels as $relabel){
+                        $event->labels[] = $relabel;
+                    }
+                }
+            }
+        }
+    }
+);
+```
+
+If Relabel does not support your HTML yet, feel free to contact me and we'll find a way to make it work
+
+## Currently supported Element Types are
 - craft\elements\Entries
 - craft\elements\Assets
 - craft\elements\GlobalSets
 - craft\elements\Categories
 - craft\elements\Users
+- verbb\voucher\elements\Voucher
+- verbb\voucher\elements\Code
+- craft\commerce\elements\Order
+- craft\commerce\elements\Product
 
 ## Register custom labels after Ajax requests
 

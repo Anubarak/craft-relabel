@@ -13,32 +13,49 @@
         currentFieldId: null,
         values: {},
         container: '',
+        fieldLayoutIndex: 0,
         closeHud: function () {
             this.hud.hide();
             this.hud.destroy();
             delete this.hud;
         },
+        refreshFieldLayout: function(){
+            var self = this;
+            var fieldLayouts = $('.fieldlayoutform');
+            $.each(fieldLayouts, function(index, e){
+                var $layout = $(e);
+                var fields = self.getFieldsForLayout($layout);
+                var layoutId = self.getFieldLayoutId($layout);
+
+                $.each(fields, function (index, item) {
+                    console.log(item, layoutId);
+                    self.values[item.fieldId + '-' + layoutId] = {
+                        name: item.name,
+                        instructions: item.instructions
+                    };
+                    self.getHiddenInput(item.fieldId, 'name', item.name, layoutId);
+                    self.getHiddenInput(item.fieldId, 'instructions', item.instructions, layoutId);
+                    self.toggleLineSpan(item.fieldId, self.values[item.fieldId+'-'+layoutId].name, $layout);
+                });
+
+                self.setup($layout, layoutId);
+            });
+            return;
+        },
         init: function (data) {
-            var e = this;
+            var self = this;
             this.labels = data.labels;
             this.labelsForLayout = data.labelsForLayout;
-            var fields = this.getFieldsForLayout();
-            $.each(fields, function (index, item) {
-                e.values[item.fieldId] = {
-                    name: item.name,
-                    instructions: item.instructions
-                };
-                e.getHiddenInput(item.fieldId, 'name', item.name);
-                e.getHiddenInput(item.fieldId, 'instructions', item.instructions);
-                e.toggleLineSpan(item.fieldId, e.values[item.fieldId].name);
-            });
-            this.setup();
+            this.refreshFieldLayout();
+
             if (this.labelsForLayout.length) {
                 this.applyLabels(this.labelsForLayout, true);
             }
         },
         changeEntryType: function (fields) {
             var self = this;
+            this.labelsForLayout = fields;
+            console.log(this.labelsForLayout);
             setTimeout(function () {
                 self.applyLabels(fields, true);
             }, 20);
@@ -69,16 +86,21 @@
                 delete this.elementEditors[elementEditor._namespace];
             }
         },
+        refresh: function(){
+            this.applyLabels(this.labelsForLayout, true);
+        },
         applyLabels: function (labels, includeDescription) {
-            var self = this, $target;
+            var self = this;
+            var $target;
             var target;
+
             if (this.elementEditors && Object.keys(this.elementEditors).length) {
                 for (var key in this.elementEditors) {
                     target = this.elementEditors[key].$form;
                 }
             }
             if (typeof target === 'undefined') {
-                $target = $("#main");
+                $target = $(this.getFieldContextSelector());
             } else {
                 $target = target;
             }
@@ -89,12 +111,13 @@
 
             // Add CpFieldLinks to regular fields
             var fieldData = {},
-                $fields = $target.find('.field').not('.matrixblock .field'),
+                $fields = $target.find('.field'),
                 $field,
                 fieldHandle;
+
             $fields.each(function (index, item) {
                 $field = $(item);
-                fieldHandle = self.getFieldHandleFromAttribute($field.attr('id'));
+                fieldHandle = self.getFieldHandleFromElement($field);
                 if (fieldHandle) {
                     var span = $field.find('.heading:first label');
                     var newLabel = self.getLabelForField(fieldHandle, labels);
@@ -160,9 +183,20 @@
             });
             return instruction;
         },
-        getFieldHandleFromAttribute: function (value) {
+        getFieldHandleFromElement: function ($field) {
+            var value = $field.attr('id');
             if (!value) return false;
             value = value.split('-');
+            if(value.length === 6){
+                var fieldHandle = value[1];
+                var id = value[2];
+                var input = $('[name="fields[' + value[1] + '][' + id + '][type]"]');
+                if(input.length){
+                    var typeHandle = input.val();
+                    var handle = fieldHandle + '.' + typeHandle + '.' + value[4];
+                    return handle;
+                }
+            }
             if (value.length < 3) return false;
             return value[value.length - 2];
         },
@@ -178,7 +212,7 @@
                 }
             }
         },
-        setup: function () {
+        setup: function ($layout, layoutId) {
             var e = this;
             var designer = Craft.FieldLayoutDesigner;
             designer.prototype.initField = function ($field) {
@@ -202,17 +236,20 @@
                     onOptionSelect: $.proxy(this, 'onFieldOptionSelect')
                 });
 
+                var layout = this.$container;
+                var layoutId = e.getFieldLayoutId(layout)
+
                 button.on('optionSelect', function (option) {
                     var $option = $(option.option),
                         $field = $option.data('menu').$anchor.parent(),
                         action = $option.data('action');
                     var fieldId = $($field).data('id');
                     if (action === 'showRelabelMenu') {
-                        e.showHoverMenu($field, fieldId);
+                        e.showHoverMenu($field, fieldId, layout, layoutId);
                     }
                 })
             };
-            var icons = $('#fieldlayoutform').find('.icon.settings');
+            var icons = $layout.find('.icon.settings');
             $.each(icons, function (index, btn) {
                 var btn = $(btn);
                 if (btn.data('menubtn')) {
@@ -223,15 +260,14 @@
                         if (!relabelButton.length) {
                             var relabel = $('<li><a data-id="' + fieldId + '" class="relabel" data-action="showRelabelMenu">Relabel</a></li>').appendTo(list);
                             relabel.on('click', function () {
-                                e.showHoverMenu($(this), fieldId);
+                                e.showHoverMenu($(this), fieldId, $layout, layoutId);
                             });
                         }
                     });
                 }
-
             });
         },
-        showHoverMenu: function (ev, fieldId) {
+        showHoverMenu: function (ev, fieldId, $layout, layoutId) {
             var e = this;
             this.currentFieldId = fieldId;
             var btn = $(ev);
@@ -244,8 +280,9 @@
             $inputContainer = $('<div class="input"/>').appendTo($field);
 
             var value = '';
-            if (fieldId in this.values) {
-                value = this.values[fieldId].name;
+            var index = fieldId+'-'+layoutId;
+            if (index in this.values) {
+                value = this.values[index].name;
             }
             $('<input type="text" class="text fullwidth" name="relabel-name" id="relabel-name"/>').appendTo($inputContainer).val(value);
 
@@ -254,8 +291,8 @@
             $inputContainer = $('<div class="input"/>').appendTo($field);
 
             value = '';
-            if (fieldId in this.values) {
-                value = this.values[fieldId].instructions;
+            if (index in this.values) {
+                value = this.values[index].instructions;
             }
             $('<textarea type="" class="text fullwidth" name="relabel-name" id="relabel-instructions"/></textarea>').appendTo($inputContainer).val(value);
 
@@ -269,7 +306,7 @@
                 e.closeHud();
             });
             this.hud = new Garnish.HUD(btn, $hudBody, {
-                onSubmit: $.proxy(this, 'saveRelabel'),
+                onSubmit: $.proxy(this, 'saveRelabel', {layout: $layout, layoutId: layoutId}),
                 // auto focus the input
                 onShow: function(e){
                     var hud = e.target;
@@ -279,24 +316,27 @@
                 }
             });
         },
-        saveRelabel: function () {
-            var inputName = this.getHiddenInput(this.currentFieldId, 'name');
-            var inputDescription = this.getHiddenInput(this.currentFieldId, 'instructions');
+        saveRelabel: function (data) {
+            var $layout = data.layout;
+            var layoutId = data.layoutId;
+            console.log(layoutId);
+            var inputName = this.getHiddenInput(this.currentFieldId, 'name', undefined, layoutId);
+            var inputDescription = this.getHiddenInput(this.currentFieldId, 'instructions', undefined, layoutId);
             var name = this.hud.$body.find('#relabel-name').val();
             var instructions = this.hud.$body.find('#relabel-instructions').val();
-            this.values[this.currentFieldId] = {
+            this.values[this.currentFieldId + '-' + layoutId] = {
                 name: name,
                 instructions: instructions
             };
             inputName.val(name);
             inputDescription.val(instructions);
-            this.toggleLineSpan(this.currentFieldId, name);
+            this.toggleLineSpan(this.currentFieldId, name, $layout, layoutId);
             this.closeHud();
         },
-        toggleLineSpan: function (fieldId, value) {
-            var container = $('.fld-field[data-id="' + fieldId + '"]');
+        toggleLineSpan: function (fieldId, value, fieldLayout, layoutId) {
+            var container = fieldLayout.find('.fld-field[data-id="' + fieldId + '"]');
             if (typeof value === 'undefined') {
-                value = this.values[fieldId];
+                value = this.values[fieldId+'-'+layoutId];
                 if (!'name' in value) {
                     value = null;
                 }
@@ -311,24 +351,34 @@
                 container.find('.tooltiptext').remove();
             }
         },
-        getHiddenInput: function (id, type, value) {
-            var inputId = 'relabel-field-input-' + type + '-' + id;
+        getHiddenInput: function (id, type, value, layoutId) {
+            console.log(layoutId);
+            var inputId = 'relabel-field-input-' + type + '-' + id + '-' + layoutId;
             var input = $('#' + inputId);
             if (typeof value === 'undefined') {
                 value = this.hud.$body.find('#relabel-' + type).val();
             }
             if (input.length === 0) {
-                input = $('<input value="' + value + '" type="hidden" id="' + inputId + '" name="relabel[' + id + '][' + type + ']">').appendTo(Craft.cp.$primaryForm);
+                input = $('<input value="' + value + '" type="hidden" id="' + inputId + '" name="relabel[' + layoutId + '][' + id + '][' + type + ']">').appendTo(Craft.cp.$primaryForm);
             }
             return input;
         },
-        getFieldLayoutId: function () {
-            return $("#fieldlayoutform").find('[name=fieldLayoutId]').val();
-        },
-        getFieldsForLayout: function (layoutId) {
-            if (typeof layoutId === 'undefined') {
-                layoutId = this.getFieldLayoutId();
+        getFieldLayoutId: function ($layout) {
+            var layoutId = $layout.find('[name=fieldLayoutId]').val();
+            if(typeof layoutId === 'undefined'){
+                layoutId = $layout.data('fieldLayoutId');
             }
+
+            if(typeof layoutId === 'undefined'){
+                layoutId = 'new'+this.fieldLayoutIndex;
+                $layout.data('fieldLayoutId', layoutId);
+                this.fieldLayoutIndex++;
+            }
+            console.log(layoutId);
+            return layoutId;
+        },
+        getFieldsForLayout: function ($layout) {
+            var layoutId = this.getFieldLayoutId($layout);
             if (typeof layoutId !== 'undefined') {
                 this.fields = this.labels.filter(function (obj) {
                     return parseInt(obj.fieldLayoutId) === parseInt(layoutId);
@@ -337,7 +387,8 @@
             return this.fields;
         },
         getFieldContextSelector: function () {
-            if (this.isLivePreview) {
+            if (typeof Craft.livePreview !== 'undefined' &&
+                Craft.livePreview.inPreviewMode) {
                 return '.lp-editor';
             }
             return '#main';

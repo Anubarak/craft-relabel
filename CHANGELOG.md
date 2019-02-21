@@ -1,5 +1,18 @@
 # Relabel Changelog
 
+## 1.2.3 - 2019-02-21
+### Added
+- Included an additional Event `RegisterAdditionalLabelEvent` to add additional Labels together with the current field layout
+- Parsed nested fields such as Neo to layer one
+- added public available `Craft.relabel.refresh();` and `Craft.relabel.refreshFieldLayout();` functions
+### Changed
+- `handleAjaxRequest` is now fired after all plugins are loaded
+- grab all field layouts on the site and not just the main one
+- send multiple different Relabels for different field layouts and not just the main one
+### Fixed
+- fixed a bug that prevent some elements from firing their relabeled HUDs correctly
+- added some exception handling
+
 ## 1.2.2 - 2019-01-31
 ### Fixed
 - Fixed a bug that required 3rd party plugins to use their components without being initialized

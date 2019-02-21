@@ -19,6 +19,7 @@ use craft\services\Fields;
 use anubarak\relabel\services\RelabelService;
 use Craft;
 use craft\base\Plugin;
+use craft\services\Plugins;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\View;
 use yii\base\Event;
@@ -51,6 +52,10 @@ class Relabel extends Plugin
      * @var FieldInterface[] $fieldById
      */
     public static $fieldById = [];
+    /**
+     * @var int $_fieldLayoutIndex
+     */
+    private $_fieldLayoutIndex = 0;
 
     /**
      * @param ElementInterface $element
@@ -103,7 +108,7 @@ class Relabel extends Plugin
 
     /**
      * @inheritdoc
-     * @throws \yii\base\InvalidConfigException
+     * @return bool
      */
     public function init()
     {
@@ -163,15 +168,32 @@ class Relabel extends Plugin
             Fields::EVENT_AFTER_SAVE_FIELD_LAYOUT,
             function(FieldLayoutEvent $event){
                 $layout = $event->layout;
+                $new = (bool)$event->isNew;
+
+                if($new === true){
+                    $index = 'new' . $this->_fieldLayoutIndex;
+                    $this->_fieldLayoutIndex++;
+                }else{
+                    $index = $layout->id;
+                }
                 /** @var array|null $relabel */
                 $relabel = Craft::$app->getRequest()->getBodyParam('relabel');
-                Relabel::getInstance()->getService()->saveRelabelsForLayout($layout, $relabel);
+                $relabelForLayout = $relabel[$index]?? null;
+                if($relabelForLayout !== null){
+                    Relabel::getInstance()->getService()->saveRelabelsForLayout($layout, $relabelForLayout);
+                }
             }
         );
 
         if($this->isInstalled && Craft::$app->getUser()->getIdentity() !== null){
             if ($request->getIsAjax()) {
-                self::getService()->handleAjaxRequest();
+                Event::on(
+                    Plugins::class,
+                    Plugins::EVENT_AFTER_LOAD_PLUGINS,
+                    function(Event $event){
+                        self::getService()->handleAjaxRequest();
+                    }
+                );
             } else {
                 Event::on(
                     View::class,

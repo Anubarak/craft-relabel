@@ -10,6 +10,7 @@
 
 namespace anubarak\relabel\services;
 
+use anubarak\relabel\events\RegisterAdditionalLabelEvent;
 use anubarak\relabel\events\RegisterLabelEvent;
 use anubarak\relabel\Relabel;
 use anubarak\relabel\RelabelAsset;
@@ -25,6 +26,7 @@ use craft\helpers\Db;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
+use yii\base\Exception;
 
 /**
  * @author    anubarak
@@ -42,6 +44,7 @@ class RelabelService extends Component
      * Event to register a field layout ID for custom elements
      */
     const EVENT_REGISTER_LABELS = 'eventRegisterLabels';
+    const EVENT_REGISTER_ADDITIONAL_LABELS = 'eventRegisterAdditionalLabels';
 
     /**
      * @return RelabelRecord[]
@@ -56,9 +59,9 @@ class RelabelService extends Component
      *
      * @return array
      */
-    public function getAllLabelsForLayout(int $layoutId): array
+    public function getAllLabelsForLayout(int $layoutId, string $context = ''): array
     {
-        return (new Query())->select(
+        $relabels = (new Query())->select(
             [
                 'relabel.id',
                 'relabel.name',
@@ -69,9 +72,17 @@ class RelabelService extends Component
                 'fields.name as oldName'
             ]
         )->from('{{%relabel}} as relabel')->where(['fieldLayoutId' => $layoutId])->leftJoin(
-                '{{%fields}} as fields',
-                '[[fields.id]] = [[relabel.fieldId]]'
-            )->all();
+            '{{%fields}} as fields',
+            '[[fields.id]] = [[relabel.fieldId]]'
+        )->all();
+
+        if ($context !== ''){
+            foreach ($relabels as $key => $relabel){
+                $relabels[$key]['handle'] = $context . '.' . $relabels[$key]['handle'];
+            }
+        }
+
+        return $relabels;
     }
 
     /**
@@ -150,8 +161,8 @@ class RelabelService extends Component
                             // sure they exists and the plugin should run even without it :(
                             $type = $segments[2];
                             $fieldLayoutId = (new Query())->select(['fieldLayoutId'])->from(
-                                    '{{%giftvoucher_vouchertypes}}'
-                                )->where(['handle' => $type])->scalar();
+                                '{{%giftvoucher_vouchertypes}}'
+                            )->where(['handle' => $type])->scalar();
                             /** @var \craft\models\Section $section */
                             if ($fieldLayoutId !== false) {
                                 $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
@@ -192,8 +203,8 @@ class RelabelService extends Component
                             $productGroup = $segments[2];
                             // query for it
                             $fieldLayoutId = (new Query())->select(['fieldLayoutId'])->from(
-                                    '{{%commerce_producttypes}}'
-                                )->where(['handle' => $productGroup])->scalar();
+                                '{{%commerce_producttypes}}'
+                            )->where(['handle' => $productGroup])->scalar();
 
                             /** @var \craft\models\Section $section */
                             if ($fieldLayoutId !== false) {
@@ -233,20 +244,28 @@ class RelabelService extends Component
             if ($elementId) {
                 $element = Craft::$app->getElements()->getElementById((int) $elementId, $elementType, $siteId);
             } else {
-                $element = new $elementType();
-                Craft::configure($element, $attributes);
+                $element = new $elementType($attributes);
             }
 
             /** @var Element $element */
-            if ($element !== null && property_exists($element, 'fieldLayoutId') && $element::hasContent()) {
-                $fieldLayoutId = (int)$element->fieldLayoutId;
-                $layout = Craft::$app->getFields()->getLayoutById($fieldLayoutId);
+            if ($element !== null && $element::hasContent()) {
+                if(property_exists($element, 'fieldLayoutId') && $element->fieldLayoutId !== null){
+                    $fieldLayoutId = (int) $element->fieldLayoutId;
+                    $layout = Craft::$app->getFields()->getLayoutById($fieldLayoutId);
+                }elseif (method_exists($element, 'getFieldLayout')){
+                    try{
+                        $layout = $element->getFieldLayout();
+                    }catch (Exception $exception){
+                        // fail silently
+                        $layout = null;
+                    }
+                }
             }
         }
 
         $event = new RegisterLabelEvent(
             [
-                'fieldLayoutId' => $layout !== null ? $layout->id : null
+                'fieldLayoutId' => $layout !== null ? (int)$layout->id : null
             ]
         );
         $this->trigger(self::EVENT_REGISTER_LABELS, $event);
@@ -254,13 +273,23 @@ class RelabelService extends Component
         if ($event->fieldLayoutId !== null) {
             $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
 
+            $additionalEvent = new RegisterAdditionalLabelEvent(
+                [
+                    'fieldLayoutId' => (int)$event->fieldLayoutId,
+                    'labels'        => $labelsForLayout
+                ]
+            );
+
+            $this->trigger(self::EVENT_REGISTER_ADDITIONAL_LABELS, $additionalEvent);
+            $allLabels = $additionalEvent->labels;
+
             if ($actionSegment === 'switch-entry-type') {
                 Craft::$app->getView()->registerJs(
-                    'Craft.relabel.changeEntryType(' . Json::encode($labelsForLayout) . ');'
+                    'Craft.relabel.changeEntryType(' . Json::encode($allLabels) . ');'
                 );
             } else {
                 Craft::$app->getView()->registerJs(
-                    'Craft.relabel.initElementEditor(' . Json::encode($labelsForLayout) . ');'
+                    'Craft.relabel.initElementEditor(' . Json::encode($allLabels) . ');'
                 );
             }
         }
@@ -288,15 +317,26 @@ class RelabelService extends Component
         $this->trigger(self::EVENT_REGISTER_LABELS, $event);
 
         // if there is a field layout, grab new labels
+        $allLabels = [];
         if ($event->fieldLayoutId !== null) {
             $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
+
+            $additionalEvent = new RegisterAdditionalLabelEvent(
+                [
+                    'fieldLayoutId' => (int)$event->fieldLayoutId,
+                    'labels'        => $labelsForLayout
+                ]
+            );
+
+            $this->trigger(self::EVENT_REGISTER_ADDITIONAL_LABELS, $additionalEvent);
+            $allLabels = $additionalEvent->labels;
         }
 
         Craft::$app->getView()->registerAssetBundle(RelabelAsset::class);
         $data = Json::encode(
             [
                 'labels'          => $this->_getLabels(),
-                'labelsForLayout' => $labelsForLayout
+                'labelsForLayout' => $allLabels
             ]
         );
 
@@ -339,8 +379,10 @@ class RelabelService extends Component
                 if ($record === null) {
                     $record = new RelabelRecord();
                     $record->uid = StringHelper::UUID();
-                } else if (!$record->uid) {
-                    $record->uid = Db::uidById('{{%relabel}}', $record->id);
+                } else {
+                    if (!$record->uid) {
+                        $record->uid = Db::uidById('{{%relabel}}', $record->id);
+                    }
                 }
 
                 $record->fieldId = $fieldId;
