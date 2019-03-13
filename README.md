@@ -5,7 +5,9 @@
 
 ## Requirements
 
-This plugin requires Craft CMS 3.0.0 or later.
+This plugin requires Craft CMS 3.0.0 or later. **Important**: if you are coming from Craft 2 - there is no migration 
+currently so all your Relabels will be deleted. If you really need a migration feel free to contact me or backup the table
+and insert it on your own
 
 ## Installation
 
@@ -25,7 +27,8 @@ To install the plugin, follow these instructions.
 
 Relabel creates a custom Database table that stores the new labels. Default Craft fields are not touched in any way.
 The strings are replaced by JavaScript so you can remove/uninstall the plugin whenever you want without breaking changes in your Control Panel.
-
+Relabel is compatible with the Craft 3 project config so you only need to relabel your fields in your main environment and can
+sync all data.
 
 ## Usage
 

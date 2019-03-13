@@ -1,5 +1,13 @@
 # Relabel Changelog
 
+
+## 1.2.4 - 2019-03-13
+### Added
+- Added Markdown support for field instructions if there is no html in it
+- Make instruction textarea resizeable
+### Changed
+- Remove certain all `console.log()` uses
+
 ## 1.2.3 - 2019-02-21
 ### Added
 - Included an additional Event `RegisterAdditionalLabelEvent` to add additional Labels together with the current field layout

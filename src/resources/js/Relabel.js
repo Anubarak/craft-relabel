@@ -28,7 +28,6 @@
                 var layoutId = self.getFieldLayoutId($layout);
 
                 $.each(fields, function (index, item) {
-                    console.log(item, layoutId);
                     self.values[item.fieldId + '-' + layoutId] = {
                         name: item.name,
                         instructions: item.instructions
@@ -40,10 +39,8 @@
 
                 self.setup($layout, layoutId);
             });
-            return;
         },
         init: function (data) {
-            var self = this;
             this.labels = data.labels;
             this.labelsForLayout = data.labelsForLayout;
             this.refreshFieldLayout();
@@ -55,7 +52,7 @@
         changeEntryType: function (fields) {
             var self = this;
             this.labelsForLayout = fields;
-            console.log(this.labelsForLayout);
+
             setTimeout(function () {
                 self.applyLabels(fields, true);
             }, 20);
@@ -237,7 +234,7 @@
                 });
 
                 var layout = this.$container;
-                var layoutId = e.getFieldLayoutId(layout)
+                var layoutId = e.getFieldLayoutId(layout);
 
                 button.on('optionSelect', function (option) {
                     var $option = $(option.option),
@@ -294,7 +291,7 @@
             if (index in this.values) {
                 value = this.values[index].instructions;
             }
-            $('<textarea type="" class="text fullwidth" name="relabel-name" id="relabel-instructions"/></textarea>').appendTo($inputContainer).val(value);
+            $('<textarea class="text fullwidth" style="resize: both" name="relabel-name" id="relabel-instructions"/></textarea>').appendTo($inputContainer).val(value);
 
             // Add the button
             var $footer = $('<div class="hud-footer"/>').appendTo($hudBody),
@@ -306,6 +303,7 @@
                 e.closeHud();
             });
             this.hud = new Garnish.HUD(btn, $hudBody, {
+                updatingSizeAndPosition: true,
                 onSubmit: $.proxy(this, 'saveRelabel', {layout: $layout, layoutId: layoutId}),
                 // auto focus the input
                 onShow: function(e){
@@ -319,7 +317,7 @@
         saveRelabel: function (data) {
             var $layout = data.layout;
             var layoutId = data.layoutId;
-            console.log(layoutId);
+
             var inputName = this.getHiddenInput(this.currentFieldId, 'name', undefined, layoutId);
             var inputDescription = this.getHiddenInput(this.currentFieldId, 'instructions', undefined, layoutId);
             var name = this.hud.$body.find('#relabel-name').val();
@@ -352,7 +350,7 @@
             }
         },
         getHiddenInput: function (id, type, value, layoutId) {
-            console.log(layoutId);
+
             var inputId = 'relabel-field-input-' + type + '-' + id + '-' + layoutId;
             var input = $('#' + inputId);
             if (typeof value === 'undefined') {
@@ -374,7 +372,7 @@
                 $layout.data('fieldLayoutId', layoutId);
                 this.fieldLayoutIndex++;
             }
-            console.log(layoutId);
+
             return layoutId;
         },
         getFieldsForLayout: function ($layout) {

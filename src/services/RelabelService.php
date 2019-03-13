@@ -12,7 +12,6 @@ namespace anubarak\relabel\services;
 
 use anubarak\relabel\events\RegisterAdditionalLabelEvent;
 use anubarak\relabel\events\RegisterLabelEvent;
-use anubarak\relabel\Relabel;
 use anubarak\relabel\RelabelAsset;
 use craft\base\Element;
 use craft\db\Query;
@@ -27,6 +26,7 @@ use craft\helpers\Json;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use yii\base\Exception;
+use yii\helpers\Markdown;
 
 /**
  * @author    anubarak
@@ -55,7 +55,8 @@ class RelabelService extends Component
     }
 
     /**
-     * @param int $layoutId
+     * @param int    $layoutId
+     * @param string $context
      *
      * @return array
      */
@@ -76,8 +77,17 @@ class RelabelService extends Component
             '[[fields.id]] = [[relabel.fieldId]]'
         )->all();
 
-        if ($context !== ''){
-            foreach ($relabels as $key => $relabel){
+        // markdown support
+        foreach ($relabels as $key => $relabel){
+            $instruction = $relabel['instructions'];
+            // make sure there is no HTML in it
+            if($instruction === strip_tags($instruction)) {
+                // no html, process markdown
+                $relabels[$key]['instructions'] = Markdown::process($instruction);
+            }
+
+            // possible Neo support
+            if ($context !== ''){
                 $relabels[$key]['handle'] = $context . '.' . $relabels[$key]['handle'];
             }
         }
@@ -304,7 +314,6 @@ class RelabelService extends Component
      */
     public function handleGetRequest()
     {
-        $labelsForLayout = [];
         // try to grab the current field layout from request by request params
         $layout = $this->getLayoutFromRequest();
 
