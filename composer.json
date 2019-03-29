@@ -2,7 +2,7 @@
   "name": "anubarak/craft-relabel",
   "description": "Relabel Plugin Craft",
   "type": "craft-plugin",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "keywords": [
     "craft",
     "cms",
@@ -18,7 +18,7 @@
     }
   ],
   "require": {
-    "craftcms/cms": "^3.1.0"
+    "craftcms/cms": "^3.1.20"
   },
   "autoload": {
     "psr-4": {

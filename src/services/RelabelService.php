@@ -12,17 +12,20 @@ namespace anubarak\relabel\services;
 
 use anubarak\relabel\events\RegisterAdditionalLabelEvent;
 use anubarak\relabel\events\RegisterLabelEvent;
+use anubarak\relabel\records\RelabelRecord;
 use anubarak\relabel\RelabelAsset;
+use Craft;
+use craft\base\Component;
 use craft\base\Element;
 use craft\db\Query;
-use anubarak\relabel\records\RelabelRecord;
-use craft\base\Component;
-use Craft;
+use craft\db\Table;
 use craft\elements\Entry;
 use craft\elements\User;
 use craft\events\ConfigEvent;
+use craft\events\RebuildConfigEvent;
 use craft\helpers\Db;
 use craft\helpers\Json;
+use craft\helpers\ProjectConfig;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use yii\base\Exception;
@@ -78,16 +81,16 @@ class RelabelService extends Component
         )->all();
 
         // markdown support
-        foreach ($relabels as $key => $relabel){
+        foreach ($relabels as $key => $relabel) {
             $instruction = $relabel['instructions'];
             // make sure there is no HTML in it
-            if($instruction === strip_tags($instruction)) {
+            if ($instruction === strip_tags($instruction)) {
                 // no html, process markdown
                 $relabels[$key]['instructions'] = Markdown::process($instruction);
             }
 
             // possible Neo support
-            if ($context !== ''){
+            if ($context !== '') {
                 $relabels[$key]['handle'] = $context . '.' . $relabels[$key]['handle'];
             }
         }
@@ -259,13 +262,13 @@ class RelabelService extends Component
 
             /** @var Element $element */
             if ($element !== null && $element::hasContent()) {
-                if(property_exists($element, 'fieldLayoutId') && $element->fieldLayoutId !== null){
+                if (property_exists($element, 'fieldLayoutId') && $element->fieldLayoutId !== null) {
                     $fieldLayoutId = (int) $element->fieldLayoutId;
                     $layout = Craft::$app->getFields()->getLayoutById($fieldLayoutId);
-                }elseif (method_exists($element, 'getFieldLayout')){
-                    try{
+                } elseif (method_exists($element, 'getFieldLayout')) {
+                    try {
                         $layout = $element->getFieldLayout();
-                    }catch (Exception $exception){
+                    } catch (Exception $exception) {
                         // fail silently
                         $layout = null;
                     }
@@ -275,7 +278,7 @@ class RelabelService extends Component
 
         $event = new RegisterLabelEvent(
             [
-                'fieldLayoutId' => $layout !== null ? (int)$layout->id : null
+                'fieldLayoutId' => $layout !== null ? (int) $layout->id : null
             ]
         );
         $this->trigger(self::EVENT_REGISTER_LABELS, $event);
@@ -285,7 +288,7 @@ class RelabelService extends Component
 
             $additionalEvent = new RegisterAdditionalLabelEvent(
                 [
-                    'fieldLayoutId' => (int)$event->fieldLayoutId,
+                    'fieldLayoutId' => (int) $event->fieldLayoutId,
                     'labels'        => $labelsForLayout
                 ]
             );
@@ -332,7 +335,7 @@ class RelabelService extends Component
 
             $additionalEvent = new RegisterAdditionalLabelEvent(
                 [
-                    'fieldLayoutId' => (int)$event->fieldLayoutId,
+                    'fieldLayoutId' => (int) $event->fieldLayoutId,
                     'labels'        => $labelsForLayout
                 ]
             );
@@ -457,6 +460,9 @@ class RelabelService extends Component
      */
     public function handleChangedRelabel(ConfigEvent $event)
     {
+        // make sure all fields are there
+        ProjectConfig::ensureAllFieldsProcessed();
+
         // Get the UID that was matched in the config path
         $uid = $event->tokenMatches[0];
         $record = RelabelRecord::findOne(['uid' => $uid]);
@@ -472,6 +478,28 @@ class RelabelService extends Component
         $record->name = $event->newValue['name'];
 
         $record->save();
+    }
+
+    /**
+     * Rebuild the project config
+     *
+     * @param \craft\events\RebuildConfigEvent $e
+     *
+     * @author Robin Schambach
+     * @since  29.03.2019
+     */
+    public function rebuildProjectConfig(RebuildConfigEvent $e)
+    {
+        /** @var RelabelRecord[] $records */
+        $records = RelabelRecord::find()->all();
+        foreach ($records as $record) {
+            $e->config[self::CONFIG_RELABEL_KEY][$record->uid] = [
+                'field'        => Db::uidById(Table::FIELDS, (int) $record->fieldId),
+                'fieldLayout'  => Db::uidById(Table::FIELDLAYOUTS, (int) $record->fieldLayoutId),
+                'instructions' => $record->instructions,
+                'name'         => $record->name
+            ];
+        }
     }
 
     /**

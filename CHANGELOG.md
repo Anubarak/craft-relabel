@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.2.5 - 2019-03-29
+### Added
+- include `ProjectConfig::EVENT_REBUILD` support to rebuild the project config
+- include `ProjectConfig::ensureAllFieldsProcessed();` to prevent possible bugs
 
 ## 1.2.4 - 2019-03-13
 ### Added

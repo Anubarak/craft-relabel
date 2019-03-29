@@ -20,6 +20,7 @@ use anubarak\relabel\services\RelabelService;
 use Craft;
 use craft\base\Plugin;
 use craft\services\Plugins;
+use craft\services\ProjectConfig;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\View;
 use yii\base\Event;
@@ -183,6 +184,12 @@ class Relabel extends Plugin
                     Relabel::getInstance()->getService()->saveRelabelsForLayout($layout, $relabelForLayout);
                 }
             }
+        );
+
+        Event::on(
+            ProjectConfig::class,
+            ProjectConfig::EVENT_REBUILD,
+            [self::getService(), 'rebuildProjectConfig']
         );
 
         if($this->isInstalled && Craft::$app->getUser()->getIdentity() !== null){
