@@ -14,6 +14,7 @@
         values: {},
         container: '',
         fieldLayoutIndex: 0,
+        _refreshProxy: null,
         closeHud: function () {
             this.hud.hide();
             this.hud.destroy();
@@ -44,7 +45,7 @@
             this.labels = data.labels;
             this.labelsForLayout = data.labelsForLayout;
             this.refreshFieldLayout();
-
+            this._refreshProxy = $.proxy(this, 'refresh');
             if (this.labelsForLayout.length) {
                 this.applyLabels(this.labelsForLayout, true);
             }
@@ -91,6 +92,20 @@
             var $target;
             var target;
 
+            // apply matrix handler
+            var matrixFields = $('.matrix-field');
+            $.each(matrixFields, function(index, item){
+                var element = $(item);
+                Garnish.requestAnimationFrame(function(){
+                    var matrixPlugin = element.data('matrix');
+                    if(matrixPlugin){
+                        matrixPlugin.off('blockAdded', this._refreshProxy);
+                        matrixPlugin.on('blockAdded', this._refreshProxy);
+                    }
+                }.bind(this));
+
+            }.bind(this));
+
             if (this.elementEditors && Object.keys(this.elementEditors).length) {
                 for (var key in this.elementEditors) {
                     target = this.elementEditors[key].$form;
@@ -115,6 +130,7 @@
             $fields.each(function (index, item) {
                 $field = $(item);
                 fieldHandle = self.getFieldHandleFromElement($field);
+
                 if (fieldHandle) {
                     var span = $field.find('.heading:first label');
                     var newLabel = self.getLabelForField(fieldHandle, labels);
@@ -180,20 +196,35 @@
             });
             return instruction;
         },
+        /**
+         *
+         * @param $field
+         * @return {string|boolean}
+         */
         getFieldHandleFromElement: function ($field) {
             var value = $field.attr('id');
             if (!value) return false;
             value = value.split('-');
+
+            /**
+             * Neo Support - maybe useless.. Maybe I'll add it
+             * if there are any future requests
+             */
             if(value.length === 6){
                 var fieldHandle = value[1];
                 var id = value[2];
                 var input = $('[name="fields[' + value[1] + '][' + id + '][type]"]');
                 if(input.length){
                     var typeHandle = input.val();
-                    var handle = fieldHandle + '.' + typeHandle + '.' + value[4];
-                    return handle;
+                    return fieldHandle + '.' + typeHandle + '.' + value[4];
                 }
             }
+
+            // it's a variant
+            if(value.length >= 4 && value[0] === 'variants'){
+                return 'variants.' + value[3];
+            }
+
             if (value.length < 3) return false;
             return value[value.length - 2];
         },
@@ -366,8 +397,13 @@
             if(typeof layoutId === 'undefined'){
                 layoutId = $layout.data('fieldLayoutId');
             }
+            // maybe it's a commerce variant?
+            var variantInput = $layout.find('[name="variant-layout[fieldLayoutId]"]');
+            if(variantInput.length){
+                layoutId = variantInput.val();
+            }
 
-            if(typeof layoutId === 'undefined'){
+            if(typeof layoutId === 'undefined' || !layoutId){
                 layoutId = 'new'+this.fieldLayoutIndex;
                 $layout.data('fieldLayoutId', layoutId);
                 this.fieldLayoutIndex++;

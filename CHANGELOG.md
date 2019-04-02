@@ -1,5 +1,10 @@
 # Relabel Changelog
 
+## 1.2.6 - 2019-04-02
+### Added
+- add matrix support
+- include Craft Commerce Variant field labels
+
 ## 1.2.5 - 2019-03-29
 ### Added
 - include `ProjectConfig::EVENT_REBUILD` support to rebuild the project config
