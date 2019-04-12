@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.2.6 - 2019-04-12
+### Added
+- Added support for Solspace Calendar [#8](https://github.com/Anubarak/craft-relabel/issues/8)
+
 ## 1.2.5 - 2019-03-29
 ### Added
 - include `ProjectConfig::EVENT_REBUILD` support to rebuild the project config

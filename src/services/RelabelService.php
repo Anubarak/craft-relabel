@@ -184,6 +184,33 @@ class RelabelService extends Component
                     }
 
                     break;
+                case 'calendar':
+                    if ($segments[1] === 'events' && count($segments) >= 2) {
+                        $id = $segments[2]?? null;
+                        if($id !== null){
+                            /** @var \craft\base\Element $element */
+                            $element = Craft::$app->getElements()->getElementById((int)$id);
+                            if($element !== null && $element->fieldLayoutId && $element::hasContent()){
+                                $fieldLayoutId = $element->fieldLayoutId;
+                                $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                            }else if($id === 'new' && count($segments) >= 3){
+                                // seems to be a new one :)
+                                // I know this isn't required but I like to double check
+                                $handle = $segments[3]?? null;
+                                if($handle !== null){
+                                    $fieldLayoutId = (new Query())
+                                        ->select(['fieldLayoutId'])
+                                        ->from('{{%calendar_calendars}}')
+                                        ->where(['handle' => $handle])
+                                        ->scalar();
+                                    if($fieldLayoutId && is_numeric($fieldLayoutId)){
+                                        $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
                 case 'commerce':
                     if (\count($segments) <= 2) {
                         return null;

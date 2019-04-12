@@ -111,7 +111,8 @@ If Relabel does not support your HTML yet, feel free to contact me and we'll fin
 - verbb\voucher\elements\Code
 - craft\commerce\elements\Order
 - craft\commerce\elements\Product
-
+- craft\commerce\elements\Variant
+- Solspace\Calendar\elements\Calendar
 ## Register custom labels after Ajax requests
 
 Crafts entries are able to change the field layout by changing the entry type, if you want to be able to change the field layout for a custom element type via Javascript as well you need to include these lines
