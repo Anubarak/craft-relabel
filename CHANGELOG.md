@@ -1,8 +1,13 @@
 # Relabel Changelog
 
-## 1.2.6 - 2019-04-12
+## 1.2.7 - 2019-04-02
 ### Added
 - Added support for Solspace Calendar [#8](https://github.com/Anubarak/craft-relabel/issues/8)
+
+## 1.2.6 - 2019-04-02
+### Added
+- add matrix support
+- include Craft Commerce Variant field labels
 
 ## 1.2.5 - 2019-03-29
 ### Added

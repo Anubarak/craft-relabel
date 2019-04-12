@@ -17,17 +17,22 @@ use anubarak\relabel\RelabelAsset;
 use Craft;
 use craft\base\Component;
 use craft\base\Element;
+use craft\base\Field;
 use craft\db\Query;
 use craft\db\Table;
 use craft\elements\Entry;
 use craft\elements\User;
 use craft\events\ConfigEvent;
 use craft\events\RebuildConfigEvent;
+use craft\fields\Matrix;
+use craft\helpers\ArrayHelper;
 use craft\helpers\Db;
 use craft\helpers\Json;
 use craft\helpers\ProjectConfig;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
+use craft\models\MatrixBlockType;
+use yii\base\Event;
 use yii\base\Exception;
 use yii\helpers\Markdown;
 
@@ -232,6 +237,7 @@ class RelabelService extends Component
                         // sure they exists and the plugin should run even without it :(
                         $lastSegment = $segments[\count($segments) - 1];
                         $id = explode('-', $lastSegment)[0];
+                        $variantLayoutId = null;
                         if ($id && strpos($lastSegment, '-')) {
                             /** @var Element $element */
                             $element = Craft::$app->getElements()->getElementById(
@@ -239,17 +245,37 @@ class RelabelService extends Component
                                 'craft\\commerce\\elements\\Product'
                             );
                             $layout = $element->getFieldLayout();
+                            // grab the variants
+                            $variantLayoutId = (new Query())->select(['variantFieldLayoutId'])->from(
+                                '{{%commerce_producttypes}} products'
+                            )->where(['products.id' => $element->typeId])->scalar();
                         } else {
                             $productGroup = $segments[2];
                             // query for it
-                            $fieldLayoutId = (new Query())->select(['fieldLayoutId'])->from(
+                            $data = (new Query())->select(['fieldLayoutId', 'variantFieldLayoutId'])->from(
                                 '{{%commerce_producttypes}}'
-                            )->where(['handle' => $productGroup])->scalar();
+                            )->where(['handle' => $productGroup])->one();
 
                             /** @var \craft\models\Section $section */
-                            if ($fieldLayoutId !== false) {
-                                $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
+                            if ($data !== null && isset($data['fieldLayoutId'])) {
+                                $layout = Craft::$app->getFields()->getLayoutById((int) $data['fieldLayoutId']);
+                                $variantLayoutId = $data['variantFieldLayoutId'];
                             }
+                        }
+                        if (empty($variantLayoutId) === false) {
+                            Event::on(
+                                self::class,
+                                self::EVENT_REGISTER_ADDITIONAL_LABELS,
+                                function(RegisterAdditionalLabelEvent $event) use ($variantLayoutId) {
+                                    $labelsForVariant = $this->getAllLabelsForLayout(
+                                        (int) $variantLayoutId,
+                                        'variants'
+                                    );
+                                    foreach ($labelsForVariant as $label) {
+                                        $event->labels[] = $label;
+                                    }
+                                }
+                            );
                         }
                     }
                     break;
@@ -312,6 +338,7 @@ class RelabelService extends Component
 
         if ($event->fieldLayoutId !== null) {
             $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
+            $this->_includeMatrixBlocks($labelsForLayout, (int) $event->fieldLayoutId);
 
             $additionalEvent = new RegisterAdditionalLabelEvent(
                 [
@@ -359,6 +386,7 @@ class RelabelService extends Component
         $allLabels = [];
         if ($event->fieldLayoutId !== null) {
             $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
+            $this->_includeMatrixBlocks($labelsForLayout, (int) $event->fieldLayoutId);
 
             $additionalEvent = new RegisterAdditionalLabelEvent(
                 [
@@ -458,6 +486,111 @@ class RelabelService extends Component
     }
 
     /**
+     * saveLabelForMatrix
+     *
+     * @param \craft\models\MatrixBlockType $matrixBlockType
+     * @param string|int|\craft\base\Field  $field
+     * @param string                        $name
+     * @param string                        $instructions
+     *
+     *
+     * @throws \yii\base\ErrorException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\NotSupportedException
+     * @throws \yii\web\ServerErrorHttpException
+     * @author Robin Schambach
+     * @since  02.04.2019
+     */
+    public function saveLabelForMatrix(MatrixBlockType $matrixBlockType, $field, string $name, string $instructions = '')
+    {
+        // grab the correct field
+        $fieldId = null;
+        if (is_numeric($field)) {
+            $fieldId = (int) $field;
+        } elseif (is_string($field)) {
+            $index = 'matrixBlockType:' . $matrixBlockType->uid;
+            $field = ArrayHelper::firstWhere(Craft::$app->getFields()->getAllFields($index), 'handle', $field, true);
+            if ($field !== null) {
+                $fieldId = (int) $field->id;
+            }
+        } elseif ($field instanceof Field) {
+            $fieldId = (int) $field->id;
+        }
+
+        // check if there is already a record for this field and layoutId
+        $record = RelabelRecord::find()->where(
+            [
+                'and',
+                'fieldLayoutId' => $matrixBlockType->fieldLayoutId,
+                'fieldId'       => $fieldId
+            ]
+        )->one();
+
+        if($record === null){
+            $record = new RelabelRecord();
+            $record->uid = StringHelper::UUID();
+        }
+
+        // store it to the config :)
+        $path = self::CONFIG_RELABEL_KEY . '.' . $record->uid;
+        Craft::$app->getProjectConfig()->set(
+            $path,
+            [
+                'field'        => Db::uidById('{{%fields}}', (int) $fieldId),
+                'fieldLayout'  => $matrixBlockType->getFieldLayout()->uid,
+                'instructions' => $instructions,
+                'name'         => $name
+            ]
+        );
+    }
+
+    /**
+     * deleteLabelFromMatrix
+     *
+     * @param \craft\models\MatrixBlockType $matrixBlockType
+     * @param                               $field
+     *
+     * @return bool
+     *
+     * @author Robin Schambach
+     * @since  02.04.2019
+     */
+    public function deleteLabelFromMatrix(MatrixBlockType $matrixBlockType, $field): bool
+    {
+        // grab the correct field
+        $fieldId = null;
+        if (is_numeric($field)) {
+            $fieldId = (int) $field;
+        } elseif (is_string($field)) {
+            $index = 'matrixBlockType:' . $matrixBlockType->uid;
+            $field = ArrayHelper::firstWhere(Craft::$app->getFields()->getAllFields($index), 'handle', $field, true);
+            if ($field !== null) {
+                $fieldId = (int) $field->id;
+            }
+        } elseif ($field instanceof Field) {
+            $fieldId = (int) $field->id;
+        }
+
+        // check if there is already a record for this field and layoutId
+        $record = RelabelRecord::find()->where(
+            [
+                'and',
+                'fieldLayoutId' => $matrixBlockType->fieldLayoutId,
+                'fieldId'       => $fieldId
+            ]
+        )->one();
+
+        // no record found ¯\_(ツ)_/¯
+        if($record === null){
+            return true;
+        }
+
+        $path = self::CONFIG_RELABEL_KEY . '.' . $record->uid;
+        Craft::$app->getProjectConfig()->remove($path);
+        return true;
+    }
+
+    /**
      * @param \craft\events\ConfigEvent $event
      *
      * @throws \Throwable
@@ -484,8 +617,10 @@ class RelabelService extends Component
     /**
      * @param \craft\events\ConfigEvent $event
      * since 28.01.2019
+     *
+     * @return bool
      */
-    public function handleChangedRelabel(ConfigEvent $event)
+    public function handleChangedRelabel(ConfigEvent $event): bool
     {
         // make sure all fields are there
         ProjectConfig::ensureAllFieldsProcessed();
@@ -504,7 +639,7 @@ class RelabelService extends Component
         $record->instructions = $event->newValue['instructions'];
         $record->name = $event->newValue['name'];
 
-        $record->save();
+        return $record->save();
     }
 
     /**
@@ -570,5 +705,40 @@ class RelabelService extends Component
         }
 
         return $output;
+    }
+
+    /**
+     * _includeMatrixBlocks
+     *
+     * @param array    $labels
+     * @param int|null $fieldLayoutId
+     *
+     *
+     * @author Robin Schambach
+     * @since  02.04.2019
+     */
+    private function _includeMatrixBlocks(array &$labels, int $fieldLayoutId = null)
+    {
+        if($fieldLayoutId === null){
+            return;
+        }
+
+        $layout = Craft::$app->getFields()->getLayoutById($fieldLayoutId);
+        if($layout !== null){
+            $fields = $layout->getFields();
+            foreach ($fields as $field){
+                if($field instanceof Matrix){
+                    /** @var \craft\fields\Matrix $field */
+                    $blocks = $field->getBlockTypes();
+                    foreach ($blocks as $block){
+                        $context = $field->handle . '.' . $block->handle;
+                        $relabels = $this->getAllLabelsForLayout($block->fieldLayoutId, $context);
+                        foreach ($relabels as $relabel){
+                            $labels[] = $relabel;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

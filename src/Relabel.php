@@ -109,6 +109,7 @@ class Relabel extends Plugin
 
     /**
      * @inheritdoc
+     * @throws \yii\base\InvalidConfigException
      * @return bool
      */
     public function init()
@@ -211,6 +212,9 @@ class Relabel extends Plugin
                 );
             }
         }
+
+        //$blockType = Craft::$app->getMatrix()->getBlockTypeById(88);
+        //Relabel::getService()->saveLabelForMatrix($blockType, 'firstName', 'new firstName', 'foobar');
 
         return true;
     }
