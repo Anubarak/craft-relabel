@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.3.0 - 2019-04-18
+### Added
+- Added changed labels for Categories and Entries in the Craft.elementIndex
+
 ## 1.2.7 - 2019-04-02
 ### Added
 - Added support for Solspace Calendar [#8](https://github.com/Anubarak/craft-relabel/issues/8)

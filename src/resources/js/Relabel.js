@@ -3,6 +3,66 @@
         return false;
     }
 
+    // change field source buttons
+    var e = Craft.CustomizeSourcesModal.Source;
+    Craft.CustomizeSourcesModal.Source = e.extend({
+        createTableColumnOption: function (key, label, first, checked) {
+            var elementIndex = Craft.elementIndex;
+            if (elementIndex) {
+                var selectedSource = Craft.elementIndex.$source;
+                if (selectedSource) {
+                    var sourceId = selectedSource.data('key');
+                    if (sourceId && typeof Craft.RelabelSourceFields !== 'undefined' &&
+                        typeof Craft.RelabelSourceFields[sourceId] !== 'undefined' &&
+                        typeof Craft.RelabelSourceFields[sourceId][key] !== 'undefined') {
+                        label = Craft.RelabelSourceFields[sourceId][key].label;
+                    }
+                }
+            }
+            var $option = $('<div class="customize-sources-table-column"/>')
+                .append('<div class="icon move"/>')
+                .append(
+                    Craft.ui.createCheckbox({
+                        label: label,
+                        name: 'sources[' + this.sourceData.key + '][tableAttributes][]',
+                        value: key,
+                        checked: checked,
+                        disabled: first
+                    })
+                );
+
+            if (first) {
+                $option.children('.move').addClass('disabled');
+            }
+
+            return $option;
+        }
+    });
+
+    // change table index buttons
+    Garnish.on(Craft.BaseElementIndex, 'updateElements', function(e, a){
+        var elementIndex = Craft.elementIndex;
+        if(elementIndex){
+            var view = elementIndex.view;
+            var selectedSource = elementIndex.$source;
+            if(view && selectedSource.length){
+                var sourceId = selectedSource.data('key');
+                if(sourceId && typeof Craft.RelabelSourceFields !== 'undefined' &&
+                typeof Craft.RelabelSourceFields[sourceId] !== 'undefined'){
+                    var table = view.$table;
+                    var cols = table.find('thead > tr > th');
+                    $.each(cols, function(i, e){
+                        var element = $(e);
+                        var key = element.data('attribute');
+                        if (typeof Craft.RelabelSourceFields[sourceId][key] !== 'undefined') {
+                            element.html(Craft.RelabelSourceFields[sourceId][key].label);
+                        }
+                    })
+                }
+            }
+        }
+    });
+
     Craft.Relabel = Garnish.Base.extend({
         elementEditors: {},
         labelsForLayout: [],
@@ -20,10 +80,10 @@
             this.hud.destroy();
             delete this.hud;
         },
-        refreshFieldLayout: function(){
+        refreshFieldLayout: function () {
             var self = this;
             var fieldLayouts = $('.fieldlayoutform');
-            $.each(fieldLayouts, function(index, e){
+            $.each(fieldLayouts, function (index, e) {
                 var $layout = $(e);
                 var fields = self.getFieldsForLayout($layout);
                 var layoutId = self.getFieldLayoutId($layout);
@@ -35,7 +95,7 @@
                     };
                     self.getHiddenInput(item.fieldId, 'name', item.name, layoutId);
                     self.getHiddenInput(item.fieldId, 'instructions', item.instructions, layoutId);
-                    self.toggleLineSpan(item.fieldId, self.values[item.fieldId+'-'+layoutId].name, $layout);
+                    self.toggleLineSpan(item.fieldId, self.values[item.fieldId + '-' + layoutId].name, $layout);
                 });
 
                 self.setup($layout, layoutId);
@@ -48,6 +108,21 @@
             this._refreshProxy = $.proxy(this, 'refresh');
             if (this.labelsForLayout.length) {
                 this.applyLabels(this.labelsForLayout, true);
+            }
+        },
+        showCustomizeSourcesModal: function (e) {
+            var target = typeof e.target !== 'undefined' ? e.target : null;
+            if (target !== null) {
+                var container = target.$sourceSettingsContainer;
+                if (container.length !== 0) {
+                    window.setTimeout(function () {
+
+                        console.log(container);
+                        debugger;
+                        var cols = container.find('.customize-sources-table-column');
+                        console.log(cols);
+                    }.bind(this), 500);
+                }
             }
         },
         changeEntryType: function (fields) {
@@ -84,7 +159,7 @@
                 delete this.elementEditors[elementEditor._namespace];
             }
         },
-        refresh: function(){
+        refresh: function () {
             this.applyLabels(this.labelsForLayout, true);
         },
         applyLabels: function (labels, includeDescription) {
@@ -94,11 +169,11 @@
 
             // apply matrix handler
             var matrixFields = $('.matrix-field');
-            $.each(matrixFields, function(index, item){
+            $.each(matrixFields, function (index, item) {
                 var element = $(item);
-                Garnish.requestAnimationFrame(function(){
+                Garnish.requestAnimationFrame(function () {
                     var matrixPlugin = element.data('matrix');
-                    if(matrixPlugin){
+                    if (matrixPlugin) {
                         matrixPlugin.off('blockAdded', this._refreshProxy);
                         matrixPlugin.on('blockAdded', this._refreshProxy);
                     }
@@ -137,7 +212,7 @@
                     var data = this.getDataForField(fieldHandle, labels);
                     if (newLabel !== false) {
                         var spanContainer = span.contents();
-                        if(spanContainer.length){
+                        if (spanContainer.length) {
                             spanContainer[0].data = newLabel + ' ';
                         }
                     }
@@ -152,9 +227,9 @@
                     }
 
                     // switch error message
-                    if($field.hasClass('has-errors') === true && data.name){
+                    if ($field.hasClass('has-errors') === true && data.name) {
                         var errors = $field.find('.errors > li');
-                        $.each(errors, function(index, item){
+                        $.each(errors, function (index, item) {
                             var $item = $(item);
                             var text = $item.text();
                             var newError = text.replace(data.oldName, data.name);
@@ -166,7 +241,7 @@
             }.bind(this));
             //}
         },
-        getDataForField: function(handle, allFields){
+        getDataForField: function (handle, allFields) {
             var data = {};
             $.each(allFields, function (index, item) {
                 if (item.handle === handle) {
@@ -210,18 +285,18 @@
              * Neo Support - maybe useless.. Maybe I'll add it
              * if there are any future requests
              */
-            if(value.length === 6){
+            if (value.length === 6) {
                 var fieldHandle = value[1];
                 var id = value[2];
                 var input = $('[name="fields[' + value[1] + '][' + id + '][type]"]');
-                if(input.length){
+                if (input.length) {
                     var typeHandle = input.val();
                     return fieldHandle + '.' + typeHandle + '.' + value[4];
                 }
             }
 
             // it's a variant
-            if(value.length >= 4 && value[0] === 'variants'){
+            if (value.length >= 4 && value[0] === 'variants') {
                 return 'variants.' + value[3];
             }
 
@@ -252,8 +327,7 @@
 
                 if ($field.hasClass('fld-required')) {
                     $('<li><a data-action="toggle-required">' + Craft.t('app', 'Make not required') + '</a></li>').appendTo($ul);
-                }
-                else {
+                } else {
                     $('<li><a data-action="toggle-required">' + Craft.t('app', 'Make required') + '</a></li>').appendTo($ul);
                 }
 
@@ -304,11 +378,11 @@
             var $field, $inputContainer;
 
             // Add the Name field
-            $field = $('<div class="field"><div class="heading"><label for="relabel-name">' + Craft.t('relabel', 'new label') +  '</label></div></div>').appendTo($hudBody);
+            $field = $('<div class="field"><div class="heading"><label for="relabel-name">' + Craft.t('relabel', 'new label') + '</label></div></div>').appendTo($hudBody);
             $inputContainer = $('<div class="input"/>').appendTo($field);
 
             var value = '';
-            var index = fieldId+'-'+layoutId;
+            var index = fieldId + '-' + layoutId;
             if (index in this.values) {
                 value = this.values[index].name;
             }
@@ -337,9 +411,9 @@
                 updatingSizeAndPosition: true,
                 onSubmit: $.proxy(this, 'saveRelabel', {layout: $layout, layoutId: layoutId}),
                 // auto focus the input
-                onShow: function(e){
+                onShow: function (e) {
                     var hud = e.target;
-                    if(typeof hud !== 'undefined'){
+                    if (typeof hud !== 'undefined') {
                         hud.$main.find('#relabel-name').focus();
                     }
                 }
@@ -365,7 +439,7 @@
         toggleLineSpan: function (fieldId, value, fieldLayout, layoutId) {
             var container = fieldLayout.find('.fld-field[data-id="' + fieldId + '"]');
             if (typeof value === 'undefined') {
-                value = this.values[fieldId+'-'+layoutId];
+                value = this.values[fieldId + '-' + layoutId];
                 if (!'name' in value) {
                     value = null;
                 }
@@ -394,17 +468,17 @@
         },
         getFieldLayoutId: function ($layout) {
             var layoutId = $layout.find('[name=fieldLayoutId]').val();
-            if(typeof layoutId === 'undefined'){
+            if (typeof layoutId === 'undefined') {
                 layoutId = $layout.data('fieldLayoutId');
             }
             // maybe it's a commerce variant?
             var variantInput = $layout.find('[name="variant-layout[fieldLayoutId]"]');
-            if(variantInput.length){
+            if (variantInput.length) {
                 layoutId = variantInput.val();
             }
 
-            if(typeof layoutId === 'undefined' || !layoutId){
-                layoutId = 'new'+this.fieldLayoutIndex;
+            if (typeof layoutId === 'undefined' || !layoutId) {
+                layoutId = 'new' + this.fieldLayoutIndex;
                 $layout.data('fieldLayoutId', layoutId);
                 this.fieldLayoutIndex++;
             }

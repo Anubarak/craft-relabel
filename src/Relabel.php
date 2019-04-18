@@ -143,7 +143,7 @@ class Relabel extends Plugin
             Event::on(
                 CraftVariable::class,
                 CraftVariable::EVENT_INIT,
-                function(Event $event) {
+                static function(Event $event) {
                     /** @var CraftVariable $variable */
                     $variable = $event->sender;
                     $variable->set('relabel', Variable::class);
@@ -198,7 +198,7 @@ class Relabel extends Plugin
                 Event::on(
                     Plugins::class,
                     Plugins::EVENT_AFTER_LOAD_PLUGINS,
-                    function(Event $event){
+                    static function(Event $event){
                         self::getService()->handleAjaxRequest();
                     }
                 );
@@ -206,7 +206,7 @@ class Relabel extends Plugin
                 Event::on(
                     View::class,
                     View::EVENT_BEFORE_RENDER_PAGE_TEMPLATE,
-                    function(TemplateEvent $event){
+                    static function(TemplateEvent $event){
                         self::getService()->handleGetRequest();
                     }
                 );

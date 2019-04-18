@@ -191,25 +191,25 @@ class RelabelService extends Component
                     break;
                 case 'calendar':
                     if ($segments[1] === 'events' && count($segments) >= 2) {
-                        $id = $segments[2]?? null;
-                        if($id !== null){
+                        $id = $segments[2] ?? null;
+                        if ($id !== null) {
                             /** @var \craft\base\Element $element */
-                            $element = Craft::$app->getElements()->getElementById((int)$id);
-                            if($element !== null && $element->fieldLayoutId && $element::hasContent()){
+                            $element = Craft::$app->getElements()->getElementById((int) $id);
+                            if ($element !== null && $element->fieldLayoutId && $element::hasContent()) {
                                 $fieldLayoutId = $element->fieldLayoutId;
-                                $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
-                            }else if($id === 'new' && count($segments) >= 3){
-                                // seems to be a new one :)
-                                // I know this isn't required but I like to double check
-                                $handle = $segments[3]?? null;
-                                if($handle !== null){
-                                    $fieldLayoutId = (new Query())
-                                        ->select(['fieldLayoutId'])
-                                        ->from('{{%calendar_calendars}}')
-                                        ->where(['handle' => $handle])
-                                        ->scalar();
-                                    if($fieldLayoutId && is_numeric($fieldLayoutId)){
-                                        $layout = Craft::$app->getFields()->getLayoutById((int)$fieldLayoutId);
+                                $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
+                            } else {
+                                if ($id === 'new' && count($segments) >= 3) {
+                                    // seems to be a new one :)
+                                    // I know this isn't required but I like to double check
+                                    $handle = $segments[3] ?? null;
+                                    if ($handle !== null) {
+                                        $fieldLayoutId = (new Query())->select(['fieldLayoutId'])->from(
+                                                '{{%calendar_calendars}}'
+                                            )->where(['handle' => $handle])->scalar();
+                                        if ($fieldLayoutId && is_numeric($fieldLayoutId)) {
+                                            $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
+                                        }
                                     }
                                 }
                             }
@@ -283,6 +283,69 @@ class RelabelService extends Component
         }
 
         return $layout;
+    }
+
+    /**
+     * sourceFieldsFromRequest
+     *
+     * @return array
+     *
+     * @author Robin Schambach
+     * @since  18.04.2019
+     */
+    public function sourceFieldsFromRequest(): array
+    {
+        $request = Craft::$app->getRequest();
+        $segments = $request->segments;
+        $sourceFields = [];
+        $countSegments = \count($segments);
+        if ($countSegments === 2 || $countSegments === 1) {
+            switch ($segments[0]) {
+                case 'categories':
+                    // get all category groups and their relabels...
+                    $groups = Craft::$app->getCategories()->getAllGroups();
+                    foreach ($groups as $group){
+                        $key = "group:{$group->uid}";
+                        $sourceFields[$key] = [];
+                        $fieldLayoutId = $group->fieldLayoutId;
+                        $labelsForFieldLayout = (new Query())
+                            ->select(['fieldId', 'name'])
+                            ->from('{{%relabel}}')
+                            ->where(['fieldLayoutId' => $fieldLayoutId])
+                            ->all();
+                        foreach ($labelsForFieldLayout as $label){
+                            $sourceFields[$key]["field:{$label['fieldId']}"] = [
+                                'label' => $label['name']
+                            ];
+                        }
+                    }
+                break;
+                case 'entries':
+                    // get all category groups and their relabels...
+                    $sections = Craft::$app->getSections()->getAllSections();
+                    foreach ($sections as $section){
+                        $key = "section:{$section->uid}";
+                        $sourceFields[$key] = [];
+                        $entryTypes = $section->getEntryTypes();
+                        foreach ($entryTypes as $entryType){
+                            $fieldLayoutId = $entryType->fieldLayoutId;
+                            $labelsForFieldLayout = (new Query())
+                                ->select(['fieldId', 'name'])
+                                ->from('{{%relabel}}')
+                                ->where(['fieldLayoutId' => $fieldLayoutId])
+                                ->all();
+                            foreach ($labelsForFieldLayout as $label){
+                                $sourceFields[$key]["field:{$label['fieldId']}"] = [
+                                    'label' => $label['name']
+                                ];
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+
+        return $sourceFields;
     }
 
     /**
@@ -373,6 +436,7 @@ class RelabelService extends Component
     {
         // try to grab the current field layout from request by request params
         $layout = $this->getLayoutFromRequest();
+        $sourceFields = $this->sourceFieldsFromRequest();
 
         // fire an event, so others may include custom labels
         $event = new RegisterLabelEvent(
@@ -410,6 +474,7 @@ class RelabelService extends Component
         $view = Craft::$app->getView();
         $view->registerTranslations('relabel', ['new label', 'new description']);
         $view->registerJs('Craft.relabel = new Craft.Relabel(' . $data . ');');
+        $view->registerJs('Craft.RelabelSourceFields = ' . Json::encode($sourceFields));
     }
 
     /**
@@ -526,7 +591,7 @@ class RelabelService extends Component
             ]
         )->one();
 
-        if($record === null){
+        if ($record === null) {
             $record = new RelabelRecord();
             $record->uid = StringHelper::UUID();
         }
@@ -581,12 +646,13 @@ class RelabelService extends Component
         )->one();
 
         // no record found ¯\_(ツ)_/¯
-        if($record === null){
+        if ($record === null) {
             return true;
         }
 
         $path = self::CONFIG_RELABEL_KEY . '.' . $record->uid;
         Craft::$app->getProjectConfig()->remove($path);
+
         return true;
     }
 
@@ -719,21 +785,21 @@ class RelabelService extends Component
      */
     private function _includeMatrixBlocks(array &$labels, int $fieldLayoutId = null)
     {
-        if($fieldLayoutId === null){
+        if ($fieldLayoutId === null) {
             return;
         }
 
         $layout = Craft::$app->getFields()->getLayoutById($fieldLayoutId);
-        if($layout !== null){
+        if ($layout !== null) {
             $fields = $layout->getFields();
-            foreach ($fields as $field){
-                if($field instanceof Matrix){
+            foreach ($fields as $field) {
+                if ($field instanceof Matrix) {
                     /** @var \craft\fields\Matrix $field */
                     $blocks = $field->getBlockTypes();
-                    foreach ($blocks as $block){
+                    foreach ($blocks as $block) {
                         $context = $field->handle . '.' . $block->handle;
                         $relabels = $this->getAllLabelsForLayout($block->fieldLayoutId, $context);
-                        foreach ($relabels as $relabel){
+                        foreach ($relabels as $relabel) {
                             $labels[] = $relabel;
                         }
                     }
