@@ -1,5 +1,9 @@
 # Relabel Changelog
 
+## 1.3.1 - 2019-05-16
+### Fixed
+- Fixed a 500 error that happens when users change to fieldlayouts with matrix blocks without a field layout
+
 ## 1.3.0 - 2019-04-18
 ### Added
 - Added changed labels for Categories and Entries in the Craft.elementIndex

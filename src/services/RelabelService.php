@@ -401,7 +401,7 @@ class RelabelService extends Component
 
         if ($event->fieldLayoutId !== null) {
             $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
-            $this->_includeMatrixBlocks($labelsForLayout, (int) $event->fieldLayoutId);
+            //$this->_includeMatrixBlocks($labelsForLayout, (int) $event->fieldLayoutId);
 
             $additionalEvent = new RegisterAdditionalLabelEvent(
                 [
@@ -450,7 +450,7 @@ class RelabelService extends Component
         $allLabels = [];
         if ($event->fieldLayoutId !== null) {
             $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
-            $this->_includeMatrixBlocks($labelsForLayout, (int) $event->fieldLayoutId);
+            //$this->_includeMatrixBlocks($labelsForLayout, (int) $event->fieldLayoutId);
 
             $additionalEvent = new RegisterAdditionalLabelEvent(
                 [
@@ -798,7 +798,10 @@ class RelabelService extends Component
                     $blocks = $field->getBlockTypes();
                     foreach ($blocks as $block) {
                         $context = $field->handle . '.' . $block->handle;
-                        $relabels = $this->getAllLabelsForLayout($block->fieldLayoutId, $context);
+                        $relabels = [];
+                        if($block->fieldLayoutId !== null){
+                            $relabels = $this->getAllLabelsForLayout($block->fieldLayoutId, $context);
+                        }
                         foreach ($relabels as $relabel) {
                             $labels[] = $relabel;
                         }
