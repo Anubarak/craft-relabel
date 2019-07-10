@@ -1,5 +1,11 @@
 # Relabel Changelog
 
+## 1.3.2 - 2019-07-10
+
+### Added
+
+- Changed labels of `Craft.elementIndex.sortMenu` accordingly to the relabeled strings
+
 ## 1.3.1 - 2019-05-16
 ### Fixed
 - Fixed a 500 error that happens when users change to fieldlayouts with matrix blocks without a field layout

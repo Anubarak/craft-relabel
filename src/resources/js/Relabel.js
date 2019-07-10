@@ -12,10 +12,10 @@
                 var selectedSource = Craft.elementIndex.$source;
                 if (selectedSource) {
                     var sourceId = selectedSource.data('key');
-                    if (sourceId && typeof Craft.RelabelSourceFields !== 'undefined' &&
-                        typeof Craft.RelabelSourceFields[sourceId] !== 'undefined' &&
-                        typeof Craft.RelabelSourceFields[sourceId][key] !== 'undefined') {
-                        label = Craft.RelabelSourceFields[sourceId][key].label;
+                    if (sourceId && typeof RelabelSourceFields !== 'undefined' &&
+                        typeof RelabelSourceFields[sourceId] !== 'undefined' &&
+                        typeof RelabelSourceFields[sourceId][key] !== 'undefined') {
+                        label = RelabelSourceFields[sourceId][key].label;
                     }
                 }
             }
@@ -39,23 +39,98 @@
         }
     });
 
+
+    var oldFieldKeys = {};
+    /**
+     * Get the label for a certain field by field key eg "field:100"
+     *
+     * @param key
+     * @param elementIndex
+     * @param {string} originalName
+     * @return {null|*}
+     */
+    var getLabelForField = function (key, elementIndex, originalName) {
+        elementIndex = typeof elementIndex !== "undefined" ? elementIndex : Craft.elementIndex;
+        sourceId = null;
+        if (elementIndex) {
+            var sourceId = elementIndex.sourceSelect.$selectedItems.length ? elementIndex.sourceSelect.$selectedItems.data('key') : elementIndex.getDefaultSourceKey();
+            if (sourceId && typeof RelabelSourceFields !== 'undefined' &&
+                typeof RelabelSourceFields[sourceId] !== 'undefined' &&
+                typeof RelabelSourceFields[sourceId][key] !== 'undefined') {
+
+                if(typeof oldFieldKeys[key] === 'undefined' && typeof originalName !== 'undefined'){
+                    oldFieldKeys[key] = originalName;
+                }
+                return RelabelSourceFields[sourceId][key].label;
+            }
+        }
+
+        return typeof oldFieldKeys[key] !== 'undefined' ? oldFieldKeys[key] : null;
+    };
+
+    var changeMenuBtnLabels = function (elementIndex) {
+        if (typeof elementIndex !== 'undefined' && elementIndex.sortMenu) {
+            var links = elementIndex.sortMenu.$options;
+            $.each(links, function (i, e) {
+                var element = $(e);
+                var key = element.data('attr');
+                if (key) {
+                    var label = getLabelForField(key, elementIndex, element.html());
+                    if (label !== null) {
+                        element.html(label);
+                    }
+                }
+            });
+        }
+    };
+
+    Garnish.on(Craft.BaseElementIndex, 'afterInit', function (e) {
+        if (typeof e.target !== 'undefined' && typeof e.target.sortMenu !== 'undefined') {
+            var viewState = e.target.getSelectedSourceState();
+            if (typeof e.target.sourceSelect !== 'undefined') {
+                e.target.sourceSelect.on('selectionChange', function (a) {
+                    viewState = e.target.getSelectedSourceState();
+                    if (typeof viewState.order !== 'undefined' && viewState.order) {
+                        var label = getLabelForField(viewState.order, e.target, e.target.$sortMenuBtn.html());
+                        if (label) {
+                            e.target.$sortMenuBtn.html(label);
+                        }
+                    }
+                });
+            }
+
+            if (typeof viewState.order !== 'undefined' && viewState.order) {
+                console.log(e.target.$sortMenuBtn.html());
+                var label = getLabelForField(viewState.order, e.target);
+                if (label !== null) {
+                    e.target.$sortMenuBtn.html(label);
+                }
+            }
+
+            changeMenuBtnLabels(e.target);
+            e.target.$sortMenuBtn.data('menubtn').$btn.on('focus', function () {
+                changeMenuBtnLabels(e.target);
+            })
+        }
+    });
+
     // change table index buttons
-    Garnish.on(Craft.BaseElementIndex, 'updateElements', function(e, a){
-        var elementIndex = Craft.elementIndex;
-        if(elementIndex){
+    Garnish.on(Craft.BaseElementIndex, 'updateElements', function (e) {
+        var elementIndex = e.target;
+        if (elementIndex) {
             var view = elementIndex.view;
             var selectedSource = elementIndex.$source;
-            if(view && selectedSource.length){
+            if (view && selectedSource.length) {
                 var sourceId = selectedSource.data('key');
-                if(sourceId && typeof Craft.RelabelSourceFields !== 'undefined' &&
-                typeof Craft.RelabelSourceFields[sourceId] !== 'undefined'){
+                if (sourceId && typeof RelabelSourceFields !== 'undefined' &&
+                    typeof RelabelSourceFields[sourceId] !== 'undefined') {
                     var table = view.$table;
                     var cols = table.find('thead > tr > th');
-                    $.each(cols, function(i, e){
+                    $.each(cols, function (i, e) {
                         var element = $(e);
                         var key = element.data('attribute');
-                        if (typeof Craft.RelabelSourceFields[sourceId][key] !== 'undefined') {
-                            element.html(Craft.RelabelSourceFields[sourceId][key].label);
+                        if (typeof RelabelSourceFields[sourceId][key] !== 'undefined') {
+                            element.html(RelabelSourceFields[sourceId][key].label);
                         }
                     })
                 }
@@ -116,11 +191,7 @@
                 var container = target.$sourceSettingsContainer;
                 if (container.length !== 0) {
                     window.setTimeout(function () {
-
-                        console.log(container);
-                        debugger;
                         var cols = container.find('.customize-sources-table-column');
-                        console.log(cols);
                     }.bind(this), 500);
                 }
             }

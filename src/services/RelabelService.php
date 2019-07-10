@@ -32,6 +32,7 @@ use craft\helpers\ProjectConfig;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craft\models\MatrixBlockType;
+use craft\web\View;
 use yii\base\Event;
 use yii\base\Exception;
 use yii\helpers\Markdown;
@@ -295,53 +296,43 @@ class RelabelService extends Component
      */
     public function sourceFieldsFromRequest(): array
     {
-        $request = Craft::$app->getRequest();
-        $segments = $request->segments;
         $sourceFields = [];
-        $countSegments = \count($segments);
-        if ($countSegments === 2 || $countSegments === 1) {
-            switch ($segments[0]) {
-                case 'categories':
-                    // get all category groups and their relabels...
-                    $groups = Craft::$app->getCategories()->getAllGroups();
-                    foreach ($groups as $group){
-                        $key = "group:{$group->uid}";
-                        $sourceFields[$key] = [];
-                        $fieldLayoutId = $group->fieldLayoutId;
-                        $labelsForFieldLayout = (new Query())
-                            ->select(['fieldId', 'name'])
-                            ->from('{{%relabel}}')
-                            ->where(['fieldLayoutId' => $fieldLayoutId])
-                            ->all();
-                        foreach ($labelsForFieldLayout as $label){
-                            $sourceFields[$key]["field:{$label['fieldId']}"] = [
-                                'label' => $label['name']
-                            ];
-                        }
-                    }
-                break;
-                case 'entries':
-                    // get all category groups and their relabels...
-                    $sections = Craft::$app->getSections()->getAllSections();
-                    foreach ($sections as $section){
-                        $key = "section:{$section->uid}";
-                        $sourceFields[$key] = [];
-                        $entryTypes = $section->getEntryTypes();
-                        foreach ($entryTypes as $entryType){
-                            $fieldLayoutId = $entryType->fieldLayoutId;
-                            $labelsForFieldLayout = (new Query())
-                                ->select(['fieldId', 'name'])
-                                ->from('{{%relabel}}')
-                                ->where(['fieldLayoutId' => $fieldLayoutId])
-                                ->all();
-                            foreach ($labelsForFieldLayout as $label){
-                                $sourceFields[$key]["field:{$label['fieldId']}"] = [
-                                    'label' => $label['name']
-                                ];
-                            }
-                        }
-                    }
-                    break;
+
+        $groups = Craft::$app->getCategories()->getAllGroups();
+        foreach ($groups as $group){
+            $key = "group:{$group->uid}";
+            $sourceFields[$key] = [];
+            $fieldLayoutId = $group->fieldLayoutId;
+            $labelsForFieldLayout = (new Query())
+                ->select(['fieldId', 'name'])
+                ->from('{{%relabel}}')
+                ->where(['fieldLayoutId' => $fieldLayoutId])
+                ->all();
+            foreach ($labelsForFieldLayout as $label){
+                $sourceFields[$key]["field:{$label['fieldId']}"] = [
+                    'label' => $label['name']
+                ];
+            }
+        }
+
+        // get all category groups and their relabels...
+        $sections = Craft::$app->getSections()->getAllSections();
+        foreach ($sections as $section){
+            $key = "section:{$section->uid}";
+            $sourceFields[$key] = [];
+            $entryTypes = $section->getEntryTypes();
+            foreach ($entryTypes as $entryType){
+                $fieldLayoutId = $entryType->fieldLayoutId;
+                $labelsForFieldLayout = (new Query())
+                    ->select(['fieldId', 'name'])
+                    ->from('{{%relabel}}')
+                    ->where(['fieldLayoutId' => $fieldLayoutId])
+                    ->all();
+                foreach ($labelsForFieldLayout as $label){
+                    $sourceFields[$key]["field:{$label['fieldId']}"] = [
+                        'label' => $label['name']
+                    ];
+                }
             }
         }
 
@@ -473,8 +464,8 @@ class RelabelService extends Component
 
         $view = Craft::$app->getView();
         $view->registerTranslations('relabel', ['new label', 'new description']);
+        $view->registerJs('RelabelSourceFields = ' . Json::encode($sourceFields), View::POS_HEAD);
         $view->registerJs('Craft.relabel = new Craft.Relabel(' . $data . ');');
-        $view->registerJs('Craft.RelabelSourceFields = ' . Json::encode($sourceFields));
     }
 
     /**
