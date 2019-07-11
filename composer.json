@@ -2,7 +2,7 @@
   "name": "anubarak/craft-relabel",
   "description": "Relabel Plugin Craft",
   "type": "craft-plugin",
-  "version": "1.3.2",
+  "version": "1.3.2.1",
   "keywords": [
     "craft",
     "cms",

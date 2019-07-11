@@ -95,6 +95,14 @@ class RelabelService extends Component
                 $relabels[$key]['instructions'] = Markdown::process($instruction);
             }
 
+            if(empty($relabel['name'])){
+                /** @var \craft\base\Field $field */
+                $field = Craft::$app->getFields()->getFieldById((int)$relabel['fieldId']);
+                if($field !== null){
+                    $relabels[$key]['name'] = $field->name;
+                }
+            }
+
             // possible Neo support
             if ($context !== '') {
                 $relabels[$key]['handle'] = $context . '.' . $relabels[$key]['handle'];

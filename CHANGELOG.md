@@ -1,5 +1,11 @@
 # Relabel Changelog
 
+## 1.3.2.1 - 2019-07-11
+
+### Changed
+
+- If only a description is set but no label for a Relabel -> use the default name
+
 ## 1.3.2 - 2019-07-10
 
 ### Added
