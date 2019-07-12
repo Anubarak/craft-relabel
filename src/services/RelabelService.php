@@ -14,6 +14,7 @@ use anubarak\relabel\events\RegisterAdditionalLabelEvent;
 use anubarak\relabel\events\RegisterLabelEvent;
 use anubarak\relabel\records\RelabelRecord;
 use anubarak\relabel\RelabelAsset;
+use function count;
 use Craft;
 use craft\base\Component;
 use craft\base\Element;
@@ -33,6 +34,8 @@ use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craft\models\MatrixBlockType;
 use craft\web\View;
+use function is_array;
+use function is_numeric;
 use yii\base\Event;
 use yii\base\Exception;
 use yii\helpers\Markdown;
@@ -123,18 +126,20 @@ class RelabelService extends Component
         $request = Craft::$app->getRequest();
         $segments = $request->segments;
         $layout = null;
-        if (\count($segments) >= 1) {
+        if (count($segments) >= 1) {
             switch ($segments[0]) {
                 case 'entries':
-                    if (\count($segments) <= 1) {
+                    if (count($segments) <= 1) {
                         return null;
                     }
-                    $lastSegment = $segments[\count($segments) - 1];
+                    $lastSegment = $segments[count($segments) - 1];
                     $id = explode('-', $lastSegment)[0];
                     if ($id && strpos($lastSegment, '-')) {
                         /** @var Element $element */
                         $element = Craft::$app->getElements()->getElementById($id, Entry::class);
-                        $layout = $element->getFieldLayout();
+                        if($element !== null){
+                            $layout = $element->getFieldLayout();
+                        }
                     } else {
                         $sectionHandle = $segments[1];
                         /** @var \craft\models\Section $section */
@@ -146,7 +151,7 @@ class RelabelService extends Component
 
                     break;
                 case 'categories':
-                    if (\count($segments) <= 1) {
+                    if (count($segments) <= 1) {
                         return null;
                     }
                     if ($groupHandle = $segments[1]) {
@@ -156,10 +161,10 @@ class RelabelService extends Component
                     }
                     break;
                 case 'globals':
-                    if (\count($segments) <= 1) {
+                    if (count($segments) <= 1) {
                         return null;
                     }
-                    $handle = $segments[\count($segments) - 1];
+                    $handle = $segments[count($segments) - 1];
                     if ($globals = Craft::$app->getGlobals()->getSetByHandle($handle)) {
                         $layout = $globals->getFieldLayout();
                     }
@@ -171,18 +176,20 @@ class RelabelService extends Component
                     $layout = Craft::$app->getFields()->getLayoutByType(User::class);
                     break;
                 case 'gift-voucher':
-                    if (\count($segments) <= 2) {
+                    if (count($segments) <= 2) {
                         return null;
                     }
 
                     // check for an id
-                    if (\count($segments) === 4) {
-                        if (\is_numeric($segments[3])) {
+                    if (count($segments) === 4) {
+                        if (is_numeric($segments[3])) {
                             $element = Craft::$app->getElements()->getElementById(
                                 (int) $segments[3],
                                 'verbb\\giftvoucher\\elements\\Voucher'
                             );
-                            $layout = $element->getFieldLayout();
+                            if($element !== nulL){
+                                $layout = $element->getFieldLayout();
+                            }
                         } else {
                             // unfortunately we can't just use Commerce classes since we can't make
                             // sure they exists and the plugin should run even without it :(
@@ -207,18 +214,16 @@ class RelabelService extends Component
                             if ($element !== null && $element->fieldLayoutId && $element::hasContent()) {
                                 $fieldLayoutId = $element->fieldLayoutId;
                                 $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
-                            } else {
-                                if ($id === 'new' && count($segments) >= 3) {
-                                    // seems to be a new one :)
-                                    // I know this isn't required but I like to double check
-                                    $handle = $segments[3] ?? null;
-                                    if ($handle !== null) {
-                                        $fieldLayoutId = (new Query())->select(['fieldLayoutId'])->from(
-                                                '{{%calendar_calendars}}'
-                                            )->where(['handle' => $handle])->scalar();
-                                        if ($fieldLayoutId && is_numeric($fieldLayoutId)) {
-                                            $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
-                                        }
+                            } else if ($id === 'new' && count($segments) >= 3) {
+                                // seems to be a new one :)
+                                // I know this isn't required but I like to double check
+                                $handle = $segments[3] ?? null;
+                                if ($handle !== null) {
+                                    $fieldLayoutId = (new Query())->select(['fieldLayoutId'])->from(
+                                            '{{%calendar_calendars}}'
+                                        )->where(['handle' => $handle])->scalar();
+                                    if ($fieldLayoutId && is_numeric($fieldLayoutId)) {
+                                        $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
                                     }
                                 }
                             }
@@ -226,25 +231,27 @@ class RelabelService extends Component
                     }
                     break;
                 case 'commerce':
-                    if (\count($segments) <= 2) {
+                    if (count($segments) <= 2) {
                         return null;
                     }
 
                     if ($segments[1] === 'orders') {
-                        $lastSegment = $segments[\count($segments) - 1];
-                        if (\is_numeric($lastSegment)) {
+                        $lastSegment = $segments[count($segments) - 1];
+                        if (is_numeric($lastSegment)) {
                             $element = Craft::$app->getElements()->getElementById(
                                 $lastSegment,
                                 'craft\\commerce\\elements\\Order'
                             );
-                            $layout = $element->getFieldLayout();
+                            if($element !== null){
+                                $layout = $element->getFieldLayout();
+                            }
                         }
                     }
 
                     if ($segments[1] === 'products') {
                         // unfortunately we can't just use Commerce classes since we can't make
                         // sure they exists and the plugin should run even without it :(
-                        $lastSegment = $segments[\count($segments) - 1];
+                        $lastSegment = $segments[count($segments) - 1];
                         $id = explode('-', $lastSegment)[0];
                         $variantLayoutId = null;
                         if ($id && strpos($lastSegment, '-')) {
@@ -253,11 +260,13 @@ class RelabelService extends Component
                                 $id,
                                 'craft\\commerce\\elements\\Product'
                             );
-                            $layout = $element->getFieldLayout();
-                            // grab the variants
-                            $variantLayoutId = (new Query())->select(['variantFieldLayoutId'])->from(
-                                '{{%commerce_producttypes}} products'
-                            )->where(['products.id' => $element->typeId])->scalar();
+                            if($element !== null){
+                                $layout = $element->getFieldLayout();
+                                // grab the variants
+                                $variantLayoutId = (new Query())->select(['variantFieldLayoutId'])->from(
+                                    '{{%commerce_producttypes}} products'
+                                )->where(['products.id' => $element->typeId])->scalar();
+                            }
                         } else {
                             $productGroup = $segments[2];
                             // query for it
@@ -357,7 +366,7 @@ class RelabelService extends Component
         $request = Craft::$app->getRequest();
 
         $segments = $request->segments;
-        $actionSegment = $segments[\count($segments) - 1];
+        $actionSegment = $segments[count($segments) - 1];
         if ($actionSegment !== 'get-editor-html' && $actionSegment !== 'switch-entry-type') {
             return false;
         }
@@ -487,7 +496,7 @@ class RelabelService extends Component
      */
     public function saveRelabelsForLayout(FieldLayout $layout, $relabel)
     {
-        if ($relabel !== null && \is_array($relabel)) {
+        if ($relabel !== null && is_array($relabel)) {
             foreach ($relabel as $fieldId => $values) {
                 /** @var RelabelRecord $record */
                 $record = RelabelRecord::find()->where(

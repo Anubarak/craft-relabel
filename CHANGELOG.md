@@ -1,10 +1,11 @@
 # Relabel Changelog
 
-## 1.3.2.1 - 2019-07-11
+## 1.3.2.2 - 2019-07-12
 
 ### Changed
 
-- If only a description is set but no label for a Relabel -> use the default name
+- Include `$element !== null` checks for all elements because Craft 3.2.0 so Craft throws exceptions since it can't find 
+elements in some cases ¯\_(ツ)_/¯
 
 ## 1.3.2 - 2019-07-10
 
