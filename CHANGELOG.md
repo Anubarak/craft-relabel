@@ -1,11 +1,17 @@
 # Relabel Changelog
 
+## 1.3.3 - 2019-09-16
+
+### Fixed
+
+- Fixes an issue with Craft loading all fields before Plugins are loaded that causes the currentUsers Field layout to be empty in certain cases https://github.com/craftcms/cms/issues/4944 
+
 ## 1.3.2.2 - 2019-07-12
 
 ### Changed
 
 - Include `$element !== null` checks for all elements because Craft 3.2.0 so Craft throws exceptions since it can't find 
-elements in some cases ¯\_(ツ)_/¯
+elements in some cases ¯\\\_(ツ)_/¯
 
 ## 1.3.2 - 2019-07-10
 

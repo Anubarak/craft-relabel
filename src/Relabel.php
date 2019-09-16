@@ -193,7 +193,11 @@ class Relabel extends Plugin
             [self::getService(), 'rebuildProjectConfig']
         );
 
-        if($this->isInstalled && Craft::$app->getUser()->getIdentity() !== null){
+        // ugly hacky fix, but I don't know an alternative https://github.com/craftcms/cms/issues/4944
+        // TODO: improve this
+        $session = Craft::$app->getSession();
+        $id = $session->getHasSessionId() || $session->getIsActive() ? $session->get(Craft::$app->getUser()->idParam) : null;
+        if($this->isInstalled && $id !== null){
             if ($request->getIsAjax()) {
                 Event::on(
                     Plugins::class,
