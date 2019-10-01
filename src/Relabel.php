@@ -68,7 +68,7 @@ class Relabel extends Plugin
     {
         /** @var Element $element */
         $errors = $element->getErrors();
-        if(!empty($errors)){
+        if(!empty($errors) && $element->fieldLayoutId !== null){
             $layout = $element->getFieldLayout();
             if($layout !== null){
                 $labelsForLayout = self::getService()->getAllLabelsForLayout($layout->id);

@@ -137,7 +137,7 @@ class RelabelService extends Component
                     if ($id && strpos($lastSegment, '-')) {
                         /** @var Element $element */
                         $element = Craft::$app->getElements()->getElementById($id, Entry::class);
-                        if($element !== null){
+                        if($element !== null && $element->typeId !== null){
                             $layout = $element->getFieldLayout();
                         }
                     } else {

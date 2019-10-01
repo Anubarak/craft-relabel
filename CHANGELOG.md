@@ -1,5 +1,12 @@
 # Relabel Changelog
 
+## 1.3.4 - 2019-09-30
+
+### Fixed
+
+- Add security check in `Relabel::getErrors`, only execute `getFieldLayout` if there is a valid fieldLayoutId
+
+
 ## 1.3.3 - 2019-09-16
 
 ### Fixed
