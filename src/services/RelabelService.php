@@ -366,7 +366,7 @@ class RelabelService extends Component
         $request = Craft::$app->getRequest();
 
         $segments = $request->segments;
-        $actionSegment = $segments[count($segments) - 1];
+        $actionSegment = $segments[count($segments) - 1] ?? null;
         if ($actionSegment !== 'get-editor-html' && $actionSegment !== 'switch-entry-type') {
             return false;
         }
