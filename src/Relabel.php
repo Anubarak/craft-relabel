@@ -32,7 +32,7 @@ use yii\base\Event;
  * @package   Relabel
  * @since     1
  *
- * @property  relabel $relabel
+ * @property  RelabelService $relabel
  */
 class Relabel extends Plugin
 {
@@ -109,8 +109,9 @@ class Relabel extends Plugin
 
     /**
      * @inheritdoc
-     * @throws \yii\base\InvalidConfigException
      * @return bool
+     * @throws \yii\base\InvalidConfigException
+     * @throws \craft\errors\MissingComponentException
      */
     public function init()
     {
@@ -185,6 +186,12 @@ class Relabel extends Plugin
                     Relabel::getInstance()->getService()->saveRelabelsForLayout($layout, $relabelForLayout);
                 }
             }
+        );
+
+        Event::on(
+            Fields::class,
+            Fields::EVENT_AFTER_DELETE_FIELD_LAYOUT,
+                [$this->relabel, 'afterDeleteFieldLayout']
         );
 
         Event::on(

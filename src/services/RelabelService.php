@@ -14,6 +14,7 @@ use anubarak\relabel\events\RegisterAdditionalLabelEvent;
 use anubarak\relabel\events\RegisterLabelEvent;
 use anubarak\relabel\records\RelabelRecord;
 use anubarak\relabel\RelabelAsset;
+use craft\events\FieldLayoutEvent;
 use function count;
 use Craft;
 use craft\base\Component;
@@ -775,6 +776,40 @@ class RelabelService extends Component
         }
 
         return $layout;
+    }
+
+    /**
+     * Function to clean labels after a field layout was deleted
+     *
+     * @param \craft\events\FieldLayoutEvent $event
+     *
+     * @author Robin Schambach
+     * @since  1.3.5 - 02.04.2020
+     */
+    public function afterDeleteFieldLayout(FieldLayoutEvent $event)
+    {
+        $fieldLayout = $event->layout;
+        // ensure everything is set ¯\_(ツ)_/¯
+        if($fieldLayout && $fieldLayout->id && $fieldLayout->uid){
+            $projectConfig = Craft::$app->getProjectConfig();
+            $labels = $projectConfig->get(self::CONFIG_RELABEL_KEY);
+            $pathsToRemove = [];
+            // loop the config and find all labels with the field uid
+            if($labels && is_array($labels)){
+                foreach ($labels as $path => $label){
+                    $fieldLayoutUid = $label['fieldLayout']?? null;
+                    if($fieldLayoutUid === $fieldLayout->uid){
+                        // save the paths, we will remove them later on
+                        $pathsToRemove[] = self::CONFIG_RELABEL_KEY . ".{$path}";
+                    }
+                }
+            }
+
+            // delete them
+            foreach ($pathsToRemove as $path){
+                $projectConfig->remove($path);
+            }
+        }
     }
 
     /**
