@@ -707,9 +707,19 @@ class RelabelService extends Component
             $record = new RelabelRecord();
         }
 
+
+        $fieldId = Db::idByUid('{{%fields}}', $event->newValue['field']);
+        if($fieldId === null){
+            return false;
+        }
+        $fieldLayoutId = Db::idByUid('{{%fieldlayouts}}', $event->newValue['fieldLayout']);
+        if($fieldLayoutId === null){
+            return false;
+        }
+
         $record->uid = $uid;
-        $record->fieldId = Db::idByUid('{{%fields}}', $event->newValue['field']);
-        $record->fieldLayoutId = Db::idByUid('{{%fieldlayouts}}', $event->newValue['fieldLayout']);
+        $record->fieldId = $fieldId;
+        $record->fieldLayoutId = $fieldLayoutId;
         $record->instructions = $event->newValue['instructions'];
         $record->name = $event->newValue['name'];
 

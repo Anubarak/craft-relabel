@@ -5,6 +5,8 @@
 ### fixed
 
 - do not relabel fields in matrix blocks [#14](https://github.com/Anubarak/craft-relabel/issues/14)
+- fixed a bug that could cause the project-config syncing to fail [12](https://github.com/Anubarak/craft-relabel/issues/12) & [11](https://github.com/Anubarak/craft-relabel/issues/11)
+- security fix by bencroker, thanks for this and sorry for being so late [13](https://github.com/Anubarak/craft-relabel/pull/13)
 
 ## 1.3.4 - 2019-09-30
 
