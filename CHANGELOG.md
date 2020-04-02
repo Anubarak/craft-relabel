@@ -1,5 +1,11 @@
 # Relabel Changelog
 
+## 1.3.5 - 2020-02-04
+
+### fixed
+
+- do not relabel fields in matrix blocks [#14](https://github.com/Anubarak/craft-relabel/issues/14)
+
 ## 1.3.4 - 2019-09-30
 
 ### Fixed

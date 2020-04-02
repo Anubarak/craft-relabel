@@ -275,6 +275,11 @@
 
             $fields.each(function (index, item) {
                 $field = $(item);
+                // check if it inside a matrix block
+                if($field.closest('.matrixblock').length >= 1){
+                    return false;
+                }
+
                 fieldHandle = self.getFieldHandleFromElement($field);
 
                 if (fieldHandle) {
