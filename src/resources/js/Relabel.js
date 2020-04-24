@@ -4,40 +4,44 @@
     }
 
     // change field source buttons
-    var e = Craft.CustomizeSourcesModal.Source;
-    Craft.CustomizeSourcesModal.Source = e.extend({
-        createTableColumnOption: function (key, label, first, checked) {
-            var elementIndex = Craft.elementIndex;
-            if (elementIndex) {
-                var selectedSource = Craft.elementIndex.$source;
-                if (selectedSource) {
-                    var sourceId = selectedSource.data('key');
-                    if (sourceId && typeof RelabelSourceFields !== 'undefined' &&
-                        typeof RelabelSourceFields[sourceId] !== 'undefined' &&
-                        typeof RelabelSourceFields[sourceId][key] !== 'undefined') {
-                        label = RelabelSourceFields[sourceId][key].label;
+
+    if(typeof Craft.CustomizeSourcesModal !== 'undefined' && typeof Craft.CustomizeSourcesModal.Source !== 'undefined'){
+        var e = Craft.CustomizeSourcesModal.Source;
+
+        Craft.CustomizeSourcesModal.Source = e.extend({
+            createTableColumnOption: function (key, label, first, checked) {
+                var elementIndex = Craft.elementIndex;
+                if (elementIndex) {
+                    var selectedSource = Craft.elementIndex.$source;
+                    if (selectedSource) {
+                        var sourceId = selectedSource.data('key');
+                        if (sourceId && typeof RelabelSourceFields !== 'undefined' &&
+                            typeof RelabelSourceFields[sourceId] !== 'undefined' &&
+                            typeof RelabelSourceFields[sourceId][key] !== 'undefined') {
+                            label = RelabelSourceFields[sourceId][key].label;
+                        }
                     }
                 }
-            }
-            var $option = $('<div class="customize-sources-table-column"/>')
-                .append('<div class="icon move"/>')
-                .append(
-                    Craft.ui.createCheckbox({
-                        label: label,
-                        name: 'sources[' + this.sourceData.key + '][tableAttributes][]',
-                        value: key,
-                        checked: checked,
-                        disabled: first
-                    })
-                );
+                var $option = $('<div class="customize-sources-table-column"/>')
+                    .append('<div class="icon move"/>')
+                    .append(
+                        Craft.ui.createCheckbox({
+                            label: label,
+                            name: 'sources[' + this.sourceData.key + '][tableAttributes][]',
+                            value: key,
+                            checked: checked,
+                            disabled: first
+                        })
+                    );
 
-            if (first) {
-                $option.children('.move').addClass('disabled');
-            }
+                if (first) {
+                    $option.children('.move').addClass('disabled');
+                }
 
-            return $option;
-        }
-    });
+                return $option;
+            }
+        });
+    }
 
 
     var oldFieldKeys = {};
