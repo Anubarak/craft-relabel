@@ -1,5 +1,11 @@
 # Relabel Changelog
 
+## 1.3.5.1 - 2020-02-06
+
+### fixed
+
+- fixed a bug that prevented re-labeling for fields that come after a matrix field in another field layout tab, thanks @[https://github.com/mdominguez](Mattias Dominguez) [#16](https://github.com/Anubarak/craft-relabel/issues/16)
+
 ## 1.3.5 - 2020-02-04
 
 ### added 
@@ -9,7 +15,7 @@
 ### fixed
 
 - do not relabel fields in matrix blocks [#14](https://github.com/Anubarak/craft-relabel/issues/14)
-- fixed a bug that could cause the project-config syncing to fail [12](https://github.com/Anubarak/craft-relabel/issues/12) & [11](https://github.com/Anubarak/craft-relabel/issues/11)
+- fixed a bug that could cause the project-config syncing to fail [12](https://github.com/Anubarak/craft-relabel/issues/12) & [#11](https://github.com/Anubarak/craft-relabel/issues/11)
 - security fix by bencroker, thanks for this and sorry for being so late [13](https://github.com/Anubarak/craft-relabel/pull/13)
 
 ## 1.3.4 - 2019-09-30

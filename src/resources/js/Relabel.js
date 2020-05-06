@@ -104,7 +104,6 @@
             }
 
             if (typeof viewState.order !== 'undefined' && viewState.order) {
-                console.log(e.target.$sortMenuBtn.html());
                 var label = getLabelForField(viewState.order, e.target);
                 if (label !== null) {
                     e.target.$sortMenuBtn.html(label);
@@ -281,10 +280,10 @@
                 $field = $(item);
                 // check if it inside a matrix block
                 if($field.closest('.matrixblock').length >= 1){
-                    return false;
+                    fieldHandle = null;
+                }else{
+                    fieldHandle = self.getFieldHandleFromElement($field);
                 }
-
-                fieldHandle = self.getFieldHandleFromElement($field);
 
                 if (fieldHandle) {
                     var span = $field.find('.heading:first label');
