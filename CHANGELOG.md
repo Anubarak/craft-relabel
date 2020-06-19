@@ -1,5 +1,12 @@
 # Relabel Changelog
 
+
+## 1.3.5.2 - 2020-06-19
+
+### fixed
+
+- fixed a bug that prevented re-labeling in JS in the latest Chrome Version for whatever reason
+
 ## 1.3.5.1 - 2020-02-06
 
 ### fixed

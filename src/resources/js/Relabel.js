@@ -289,10 +289,11 @@
                     var span = $field.find('.heading:first label');
                     var newLabel = self.getLabelForField(fieldHandle, labels);
                     var data = this.getDataForField(fieldHandle, labels);
+
                     if (newLabel !== false) {
                         var spanContainer = span.contents();
                         if (spanContainer.length) {
-                            spanContainer[0].data = newLabel + ' ';
+                            spanContainer[0].innerHTML = newLabel + ' ';
                         }
                     }
                     var newInstruction = self.getInstructionForField(fieldHandle, labels);
