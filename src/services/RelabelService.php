@@ -133,9 +133,11 @@ class RelabelService extends Component
                     if (count($segments) <= 1) {
                         return null;
                     }
+
+                    // check fo a draft ID
                     $lastSegment = $segments[count($segments) - 1];
                     $id = explode('-', $lastSegment)[0];
-                    if ($id && strpos($lastSegment, '-')) {
+                    if ($id && (strpos($lastSegment, '-') || is_numeric($id)) ) {
                         /** @var Element $element */
                         $element = Craft::$app->getElements()->getElementById($id, Entry::class);
                         if($element !== null && $element->typeId !== null){
