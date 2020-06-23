@@ -138,8 +138,19 @@ class RelabelService extends Component
                     $lastSegment = $segments[count($segments) - 1];
                     $id = explode('-', $lastSegment)[0];
                     if ($id && (strpos($lastSegment, '-') || is_numeric($id)) ) {
+
+                        // update check for Site request param
+                        $siteId = null;
+                        $siteHandle = $request->getQueryParam('site');
+                        if($siteHandle){
+                            $site = Craft::$app->getSites()->getSiteByHandle($siteHandle);
+                            if($site !== null){
+                                $siteId = $site->id;
+                            }
+                        }
+
                         /** @var Element $element */
-                        $element = Craft::$app->getElements()->getElementById($id, Entry::class);
+                        $element = Craft::$app->getElements()->getElementById($id, Entry::class, $siteId);
                         if($element !== null && $element->typeId !== null){
                             $layout = $element->getFieldLayout();
                         }
@@ -459,6 +470,7 @@ class RelabelService extends Component
 
         // if there is a field layout, grab new labels
         $allLabels = [];
+
         if ($event->fieldLayoutId !== null) {
             $labelsForLayout = $this->getAllLabelsForLayout($event->fieldLayoutId);
             //$this->_includeMatrixBlocks($labelsForLayout, (int) $event->fieldLayoutId);

@@ -1,5 +1,11 @@
 # Relabel Changelog
 
+## 1.3.5.3 - 2020-06-23
+
+### added
+
+- added support for new Craft 3.5 "entries per site" config -> check for the "site" query param to request the entry for the correct site
+- added support for drafts -> those have only an url like "{id}" and not "{id}-{slug}"
 
 ## 1.3.5.2 - 2020-06-19
 
