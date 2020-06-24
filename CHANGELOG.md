@@ -1,5 +1,12 @@
 # Relabel Changelog
 
+
+## 1.3.5.4 - 2020-06-23
+
+### fixed
+
+- another try to change labels for all browser(s) and versions
+
 ## 1.3.5.3 - 2020-06-23
 
 ### added

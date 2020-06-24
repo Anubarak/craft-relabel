@@ -292,6 +292,12 @@
 
                     if (newLabel !== false) {
                         var spanContainer = span.contents();
+                        spanContainer.filter(function() {
+                            return this.nodeType === 3
+                        }).each(function(){
+                            this.textContent = this.textContent.replace(data.oldName,newLabel);
+                        });
+
                         if (spanContainer.length) {
                             spanContainer[0].innerHTML = newLabel + ' ';
                         }
