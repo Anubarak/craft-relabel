@@ -14,7 +14,11 @@ use anubarak\relabel\events\RegisterAdditionalLabelEvent;
 use anubarak\relabel\events\RegisterLabelEvent;
 use anubarak\relabel\records\RelabelRecord;
 use anubarak\relabel\RelabelAsset;
+use craft\elements\Asset;
+use craft\elements\Category;
+use craft\elements\GlobalSet;
 use craft\events\FieldLayoutEvent;
+use craft\helpers\UrlHelper;
 use function count;
 use Craft;
 use craft\base\Component;
@@ -201,7 +205,7 @@ class RelabelService extends Component
                                 (int) $segments[3],
                                 'verbb\\giftvoucher\\elements\\Voucher'
                             );
-                            if($element !== nulL){
+                            if($element !== null){
                                 $layout = $element->getFieldLayout();
                             }
                         } else {
@@ -228,7 +232,7 @@ class RelabelService extends Component
                             if ($element !== null && $element->fieldLayoutId && $element::hasContent()) {
                                 $fieldLayoutId = $element->fieldLayoutId;
                                 $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
-                            } else if ($id === 'new' && count($segments) >= 3) {
+                            } else {if ($id === 'new' && count($segments) >= 3) {
                                 // seems to be a new one :)
                                 // I know this isn't required but I like to double check
                                 $handle = $segments[3] ?? null;
@@ -240,7 +244,7 @@ class RelabelService extends Component
                                         $layout = Craft::$app->getFields()->getLayoutById((int) $fieldLayoutId);
                                     }
                                 }
-                            }
+                            }}
                         }
                     }
                     break;
@@ -876,5 +880,183 @@ class RelabelService extends Component
                 }
             }
         }
+    }
+
+    /**
+     * getAllAlteredLayouts
+     *
+     *
+     * @return array
+     *
+     * @author Robin Schambach
+     * @since  15.07.2020
+     */
+    public function getAllAlteredLayouts()
+    {
+        // ugly as hell but we may be in the middle of a migration and Craft Code might not be available ｡ﾟ･（>﹏<）･ﾟ｡
+        // grab all relabels
+        // beg this won't be too much (⋆❛ ہ ❛⋆)⊃▂✫⌒*･ﾟ✲
+        $labels = (new Query())
+            ->select(['id', 'name', 'instructions', 'fieldId', 'fieldLayoutId'])
+            ->from('{{%relabel}}')
+            ->all();
+
+        $fieldLayoutIds = [];
+        $labelsByLayoutId = [];
+        foreach ($labels as $label){
+            $layoutId = (int)$label['fieldLayoutId'];
+            if($layoutId){
+                if(isset($labelsByLayoutId[$layoutId]) === false){
+                    $labelsByLayoutId[$layoutId] = [];
+                }
+
+                $labelsByLayoutId[$layoutId][] = $label;
+                $fieldLayoutIds[] = $layoutId;
+            }
+        }
+
+        $layouts = [];
+        foreach ($fieldLayoutIds as $layoutId){
+
+            $layout = $this->getLayoutById($layoutId);
+
+            if($layout !== null){
+                $layout['fields'] = $labelsByLayoutId[$layoutId]?? [];
+                foreach ($layout['tabs'] as &$tab){
+                    $fieldsForTab = [];
+                    foreach ($tab['fields'] as $field){
+                        $id = (int)$field['fieldId'];
+                        foreach ($layout['fields'] as $layoutField){
+                            if((int)$layoutField['fieldId'] === $id){
+                                $fieldsForTab[] = $layoutField;
+                            }
+                        }
+                    }
+                    $tab['relabels'] = $fieldsForTab;
+                }
+                unset($tab);
+
+            }
+
+            $layouts[] = $layout;
+        }
+
+        return $layouts;
+    }
+
+    public $layoutsById = [];
+
+    /**
+     * getLayoutById
+     *
+     * @param int $id
+     *
+     * @return array
+     *
+     * @author Robin Schambach
+     * @since  15.07.2020
+     */
+    public function getLayoutById(int $id)
+    {
+        if(isset($this->layoutsById[$id]) === false){
+            $layout = [];
+            $select = ['id', 'type', 'uid'];
+
+            //@formatter:off
+            $row = (new Query())
+                ->select($select)
+                ->from('{{%fieldlayouts}}')
+                ->where(['id' => $id])
+                ->one();
+            //@formatter:on
+
+            if(empty($row) === false){
+                // grab all tabs
+                //@formatter:off
+                $tabs = (new Query())
+                    ->select(['id', 'name'])
+                    ->from('{{%fieldlayouttabs}}')
+                    ->where(['layoutId' => $row['id']])
+                    ->all();
+                //@formatter:on
+
+                foreach ($tabs as &$tab){
+
+                    //@formatter:off
+                    $fields = (new Query())
+                        ->select(['fieldId'])
+                        ->from('{{%fieldlayoutfields}}')
+                        ->where(['tabId' => $tab['id']])
+                        ->all();
+                    //@formatter:on
+                    $tab['fields'] = $fields;
+                }
+                unset($tab);
+
+                $layout = $row;
+                $layout['tabs'] = $tabs;
+                $layout['link'] = $this->getLinkForLayout($layout);
+            }
+            $this->layoutsById[$id] = $layout;
+        }
+
+        return $this->layoutsById[$id];
+    }
+
+    public function getLinkForLayout($layout)
+    {
+        $type = $layout['type']?? null;
+        $id = $layout['id']?? null;
+        $link = null;
+        if($type !== null && $id !== null){
+            switch ($type){
+                case GlobalSet::class:
+                    $id = (new Query())
+                        ->select(['id'])
+                        ->from('{{%globalsets}}')
+                        ->where(['fieldlayoutId' => $id])
+                        ->scalar();
+                    if($id){
+                        $link = 'settings/globals/' . $id;
+                    }
+                    break;
+                case Entry::class:
+                    $ids = (new Query())
+                        ->select(['id', 'sectionId'])
+                        ->from('{{%entrytypes}}')
+                        ->where(['fieldlayoutId' => $id])
+                        ->one();
+
+                    if($ids && isset($ids['id'], $ids['sectionId'])){
+                        $link = "settings/sections/{$ids['sectionId']}/entrytypes/" . $ids['id'];
+                    }
+                    break;
+                case User::class:
+                    $link = 'settings/users/fields';
+                    break;
+                case Asset::class:
+                    $id = (new Query())
+                        ->select(['id'])
+                        ->from('{{%volumes}}')
+                        ->where(['fieldlayoutId' => $id])
+                        ->scalar();
+                    if($id){
+                        $link = 'settings/assets/volumes/' . $id;
+                    }
+                    break;
+                case Category::class:
+                    $id = (new Query())
+                        ->select(['id'])
+                        ->from('{{%categorygroups}}')
+                        ->where(['fieldlayoutId' => $id])
+                        ->scalar();
+                    if($id){
+                        $link = 'settings/categories/' . $id;
+                    }
+                    break;
+            }
+        }
+
+        return $link === null? null : UrlHelper::cpUrl($link);
     }
 }

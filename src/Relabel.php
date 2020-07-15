@@ -49,6 +49,8 @@ class Relabel extends Plugin
      */
     public static $plugin;
 
+    public $hasCpSettings = true;
+
     /**
      * @var FieldInterface[] $fieldById
      */
@@ -140,16 +142,17 @@ class Relabel extends Plugin
         }
 
         // inject the global to use relabel.getErrors(entry) via frontend
+        Event::on(
+            CraftVariable::class,
+            CraftVariable::EVENT_INIT,
+            static function(Event $event) {
+                /** @var CraftVariable $variable */
+                $variable = $event->sender;
+                $variable->set('relabel', Variable::class);
+            }
+        );
+
         if($request->getIsSiteRequest()){
-            Event::on(
-                CraftVariable::class,
-                CraftVariable::EVENT_INIT,
-                static function(Event $event) {
-                    /** @var CraftVariable $variable */
-                    $variable = $event->sender;
-                    $variable->set('relabel', Variable::class);
-                }
-            );
             Craft::$app->getView()->getTwig()->addGlobal('relabel', new Variable());
             return false;
         }
@@ -166,39 +169,39 @@ class Relabel extends Plugin
         /**
          * Register field layout saves
          */
-        Event::on(
-            Fields::class,
-            Fields::EVENT_AFTER_SAVE_FIELD_LAYOUT,
-            function(FieldLayoutEvent $event){
-                $layout = $event->layout;
-                $new = (bool)$event->isNew;
+//        Event::on(
+//            Fields::class,
+//            Fields::EVENT_AFTER_SAVE_FIELD_LAYOUT,
+//            function(FieldLayoutEvent $event){
+//                $layout = $event->layout;
+//                $new = (bool)$event->isNew;
+//
+//                if($new === true){
+//                    $index = 'new' . $this->_fieldLayoutIndex;
+//                    $this->_fieldLayoutIndex++;
+//                }else{
+//                    $index = $layout->id;
+//                }
+//                /** @var array|null $relabel */
+//                $relabel = Craft::$app->getRequest()->getBodyParam('relabel');
+//                $relabelForLayout = $relabel[$index]?? null;
+//                if($relabelForLayout !== null){
+//                    Relabel::getInstance()->getService()->saveRelabelsForLayout($layout, $relabelForLayout);
+//                }
+//            }
+//        );
 
-                if($new === true){
-                    $index = 'new' . $this->_fieldLayoutIndex;
-                    $this->_fieldLayoutIndex++;
-                }else{
-                    $index = $layout->id;
-                }
-                /** @var array|null $relabel */
-                $relabel = Craft::$app->getRequest()->getBodyParam('relabel');
-                $relabelForLayout = $relabel[$index]?? null;
-                if($relabelForLayout !== null){
-                    Relabel::getInstance()->getService()->saveRelabelsForLayout($layout, $relabelForLayout);
-                }
-            }
-        );
+//        Event::on(
+//            Fields::class,
+//            Fields::EVENT_AFTER_DELETE_FIELD_LAYOUT,
+//                [$this->relabel, 'afterDeleteFieldLayout']
+//        );
 
-        Event::on(
-            Fields::class,
-            Fields::EVENT_AFTER_DELETE_FIELD_LAYOUT,
-                [$this->relabel, 'afterDeleteFieldLayout']
-        );
-
-        Event::on(
-            ProjectConfig::class,
-            ProjectConfig::EVENT_REBUILD,
-            [self::getService(), 'rebuildProjectConfig']
-        );
+//        Event::on(
+//            ProjectConfig::class,
+//            ProjectConfig::EVENT_REBUILD,
+//            [self::getService(), 'rebuildProjectConfig']
+//        );
 
         // ugly hacky fix, but I don't know an alternative https://github.com/craftcms/cms/issues/4944
         // TODO: improve this
@@ -228,6 +231,13 @@ class Relabel extends Plugin
         //Relabel::getService()->saveLabelForMatrix($blockType, 'firstName', 'new firstName', 'foobar');
 
         return true;
+    }
+
+    protected function settingsHtml(): string
+    {
+        return Craft::$app->view->renderTemplate(
+            'relabel/settings'
+        );
     }
 
     /**

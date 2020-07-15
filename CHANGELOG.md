@@ -1,5 +1,17 @@
 # Relabel Changelog
 
+## 1.4.0 - 2020-07-15
+
+> {warning} Craft 3.5.0 has implemented it's custom version for relabeling fields. In order to not lose your relabels you should update to this version. It will stop working, but I'm going to create a migration soon to migrate old relabels to the new Craft style, in the meantime you can either do nothing or see all relabels in a custom index page `admin/relabel`. But if you don't update to this version all relabels will be forever deleted as soon as you re-save a layout
+
+### changed
+
+- deactivate the plugin
+
+### added
+
+- added a custom index page to display all labels in use `settings/plugins/relabel`
+- in progress -> create a migration to apply old relabel to new craft field layouts
 
 ## 1.3.5.4 - 2020-06-23
 

@@ -1,0 +1,45 @@
+{% set layouts = craft.relabel.alteredLayouts() %}
+
+<table id="labels" class="data fullwidth collapsible">
+    <thead>
+    <th scope="col">id</th>
+    <th scope="col">type</th>
+    <th scope="col">uid</th>
+    <th scope="col">tabs</th>
+    <th scope="col">url</th>
+    </thead>
+    <tbody>
+
+    {% for layout in layouts %}
+        <tr data-id="{{ layout.id }}">
+            <td data-title="id">
+                {{ layout.id }}
+            </td>
+
+            <td data-title="uid">
+                {{ layout.type }}
+            </td>
+
+            <td data-title="uid">
+                {{ layout.uid }}
+            </td>
+
+            <td data-title="fields">
+                {% for tab in layout.tabs if tab.relabels|length %}
+                    <b>{{ tab.name }}</b><br>
+                    {% for field in tab.relabels %}
+                        {{ field.name }}<br>
+                    {% endfor %}
+                {% endfor %}
+            </td>
+
+
+            <td data-title="url">
+                {% if layout.link %}
+                    <a href="{{ layout.link }}" target="_blank" data-icon="world"></a>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
