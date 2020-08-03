@@ -28,7 +28,7 @@
                 {% for tab in layout.tabs if tab.relabels|length %}
                     <b>{{ tab.name }}</b><br>
                     {% for field in tab.relabels %}
-                        {{ field.name }}<br>
+                        {{ field.handle }}: {{ field.name }}<br>
                     {% endfor %}
                 {% endfor %}
             </td>

@@ -897,8 +897,9 @@ class RelabelService extends Component
         // grab all relabels
         // beg this won't be too much (⋆❛ ہ ❛⋆)⊃▂✫⌒*･ﾟ✲
         $labels = (new Query())
-            ->select(['id', 'name', 'instructions', 'fieldId', 'fieldLayoutId'])
+            ->select(['relabel.id', 'relabel.name', 'relabel.instructions', 'relabel.fieldId', 'relabel.fieldLayoutId', 'fields.handle'])
             ->from('{{%relabel}}')
+            ->leftJoin(Table::FIELDS, '[[fields.id]] = [[relabel.fieldId]]')
             ->all();
 
         $fieldLayoutIds = [];
@@ -916,6 +917,7 @@ class RelabelService extends Component
         }
 
         $layouts = [];
+        $fieldLayoutIds = array_unique($fieldLayoutIds);
         foreach ($fieldLayoutIds as $layoutId){
 
             $layout = $this->getLayoutById($layoutId);
@@ -935,7 +937,6 @@ class RelabelService extends Component
                     $tab['relabels'] = $fieldsForTab;
                 }
                 unset($tab);
-
             }
 
             $layouts[] = $layout;
@@ -1001,6 +1002,25 @@ class RelabelService extends Component
         }
 
         return $this->layoutsById[$id];
+    }
+
+    public $handlesById = [];
+
+    public function getHandleById(int $fieldId)
+    {
+        if(isset($this->handlesById[$fieldId]) === false){
+            $allHandles = (new Query())
+                ->select(['id', 'handle'])
+                ->from(Table::FIELDS)
+                ->where(['context' => 'global'])
+                ->all();
+
+            foreach ($allHandles as $field){
+                $this->handlesById[(int)$field->id] = $field['handle'];
+            }
+        }
+
+        return $this->handlesById[$fieldId];
     }
 
     public function getLinkForLayout($layout)

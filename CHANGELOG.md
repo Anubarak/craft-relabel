@@ -1,5 +1,13 @@
 # Relabel Changelog
 
+## 2-0-0 - 2020-08-03
+
+> {error} Craft 3.5.0 due to the field layout changes in Craft 3.5.0 Relabel is not longer required. This final version will create a migration that tries to convert relabels to native Craft CMS Field labeling. Use it on your own risk and double check if all labels are set correctly after the migration. please report any errors/issues you find and alter the rest of your fields if required. Make sure to backup your system before you run the migration.
+
+### added
+
+- final migration to convert custom labels into Craft CMS native labels
+
 ## 1.4.0 - 2020-07-15
 
 > {warning} Craft 3.5.0 has implemented it's custom version for relabeling fields. In order to not lose your relabels you should update to this version. It will stop working, but I'm going to create a migration soon to migrate old relabels to the new Craft style, in the meantime you can either do nothing or see all relabels in a custom index page `admin/relabel`. But if you don't update to this version all relabels will be forever deleted as soon as you re-save a layout
