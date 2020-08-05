@@ -1,8 +1,16 @@
 # Relabel Changelog
 
+## 2.0.2 - 2020-08-05
+
+> {warning} Craft 3.5.0 due to the field layout changes in Craft 3.5.0 Relabel is not longer required. This final version will create a migration that tries to convert relabels to native Craft CMS Field labeling. Use it on your own risk and double check if all labels are set correctly after the migration. please report any errors/issues you find and alter the rest of your fields if required. Make sure to backup your system before you run the migration.
+
+### fixed
+
+- fixed an table prefix issue when fetching relabel
+
 ## 2.0.0 - 2020-08-03
 
-> {error} Craft 3.5.0 due to the field layout changes in Craft 3.5.0 Relabel is not longer required. This final version will create a migration that tries to convert relabels to native Craft CMS Field labeling. Use it on your own risk and double check if all labels are set correctly after the migration. please report any errors/issues you find and alter the rest of your fields if required. Make sure to backup your system before you run the migration.
+> {warning} Craft 3.5.0 due to the field layout changes in Craft 3.5.0 Relabel is not longer required. This final version will create a migration that tries to convert relabels to native Craft CMS Field labeling. Use it on your own risk and double check if all labels are set correctly after the migration. please report any errors/issues you find and alter the rest of your fields if required. Make sure to backup your system before you run the migration.
 
 ### added
 
