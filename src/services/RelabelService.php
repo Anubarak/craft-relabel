@@ -898,8 +898,8 @@ class RelabelService extends Component
         // beg this won't be too much (⋆❛ ہ ❛⋆)⊃▂✫⌒*･ﾟ✲
         $labels = (new Query())
             ->select(['relabel.id', 'relabel.name', 'relabel.instructions', 'relabel.fieldId', 'relabel.fieldLayoutId', 'fields.handle'])
-            ->from('{{%relabel}}')
-            ->leftJoin(Table::FIELDS, '[[fields.id]] = [[relabel.fieldId]]')
+            ->from('{{%relabel}} as relabel')
+            ->leftJoin(['fields' => Table::FIELDS], '[[fields.id]] = [[relabel.fieldId]]')
             ->all();
 
         $fieldLayoutIds = [];
