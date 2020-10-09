@@ -1034,7 +1034,7 @@ class RelabelService extends Component
                     $id = (new Query())
                         ->select(['id'])
                         ->from('{{%globalsets}}')
-                        ->where(['fieldlayoutId' => $id])
+                        ->where(['fieldLayoutId' => $id])
                         ->scalar();
                     if($id){
                         $link = 'settings/globals/' . $id;
@@ -1044,7 +1044,7 @@ class RelabelService extends Component
                     $ids = (new Query())
                         ->select(['id', 'sectionId'])
                         ->from('{{%entrytypes}}')
-                        ->where(['fieldlayoutId' => $id])
+                        ->where(['fieldLayoutId' => $id])
                         ->one();
 
                     if($ids && isset($ids['id'], $ids['sectionId'])){
@@ -1058,7 +1058,7 @@ class RelabelService extends Component
                     $id = (new Query())
                         ->select(['id'])
                         ->from('{{%volumes}}')
-                        ->where(['fieldlayoutId' => $id])
+                        ->where(['fieldLayoutId' => $id])
                         ->scalar();
                     if($id){
                         $link = 'settings/assets/volumes/' . $id;
@@ -1068,7 +1068,7 @@ class RelabelService extends Component
                     $id = (new Query())
                         ->select(['id'])
                         ->from('{{%categorygroups}}')
-                        ->where(['fieldlayoutId' => $id])
+                        ->where(['fieldLayoutId' => $id])
                         ->scalar();
                     if($id){
                         $link = 'settings/categories/' . $id;
